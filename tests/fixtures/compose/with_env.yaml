@@ -1,0 +1,5 @@
+services:
+  web:
+    image: ${REGISTRY:-docker.io}/myapp:${VERSION:-latest}
+  db:
+    image: postgres:${PG_VERSION:-16}

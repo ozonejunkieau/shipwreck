@@ -1,0 +1,7 @@
+services:
+  app:
+    image: myapp:1.0
+  debug-tools:
+    image: debug:latest
+    profiles:
+      - debug

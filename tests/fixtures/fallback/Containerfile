@@ -1,0 +1,4 @@
+FROM ubi9/ubi-minimal:9.3
+RUN microdnf install -y python3
+COPY . /app
+CMD ["python3", "app.py"]

@@ -1,0 +1,6 @@
+# image: old-image:1.0
+deployment:
+  image: true
+  replicas: 1
+config:
+  image: false

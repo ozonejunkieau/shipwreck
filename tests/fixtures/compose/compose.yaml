@@ -1,0 +1,12 @@
+services:
+  web:
+    image: registry.example.com/myapp:1.0
+  db:
+    image: postgres:16
+  redis:
+    image: redis:7-alpine
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: registry.example.com/myapp:latest

@@ -1,0 +1,7 @@
+services:
+  web:
+    image: registry.example.com/myapp:0.1.1
+  db:
+    image: postgres:16
+  redis:
+    image: redis:7-alpine

@@ -1,0 +1,12 @@
+deployment:
+  image: registry.example.com/myapp:1.0
+  replicas: 3
+
+monitoring:
+  prometheus:
+    image: prom/prometheus:v2.48.0
+  grafana:
+    image: grafana/grafana:10.0.0
+
+# This should be ignored (not an image ref)
+image: true

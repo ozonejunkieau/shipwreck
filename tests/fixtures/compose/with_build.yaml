@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: myapp:latest
+  worker:
+    build: ./worker
+  db:
+    image: postgres:16
