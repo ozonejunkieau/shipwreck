@@ -1,0 +1,16 @@
+---
+# Handlers that restart Docker containers
+
+- name: Restart webapp
+  community.docker.docker_container:
+    name: webapp
+    image: registry.example.com/webapp:1.2.3
+    state: started
+    restart: true
+
+- name: Restart worker
+  docker_container:
+    name: worker
+    image: registry.example.com/worker:stable
+    state: started
+    restart: true

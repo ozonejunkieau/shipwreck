@@ -1,0 +1,47 @@
+---
+# Deployment tasks with podman module, when conditionals, and block/rescue
+
+- name: Deploy with podman container module
+  containers.podman.podman_container:
+    name: worker
+    image: registry.example.com/worker:2.0
+    state: started
+
+- name: Deploy conditionally
+  community.docker.docker_container:
+    name: debug_app
+    image: registry.example.com/debug:latest
+    state: started
+  when: enable_debug | default(false)
+
+- name: Deploy loop of services
+  community.docker.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    state: started
+  loop: "{{ services }}"
+
+- name: Deploy with block/rescue
+  block:
+    - name: Try primary deployment
+      community.docker.docker_container:
+        name: primary
+        image: registry.example.com/primary:1.0
+        state: started
+  rescue:
+    - name: Fall back to stable version
+      community.docker.docker_container:
+        name: primary
+        image: registry.example.com/primary:stable
+        state: started
+  always:
+    - name: Always run sidecar
+      community.docker.docker_container:
+        name: sidecar
+        image: registry.example.com/sidecar:1.0
+        state: started
+
+- name: Start compose stack v2
+  community.docker.docker_compose_v2:
+    project_src: /opt/app
+    state: present

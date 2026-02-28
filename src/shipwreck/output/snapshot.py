@@ -83,8 +83,8 @@ def diff_snapshots(previous: Graph, current: Graph) -> dict:
 
     Returns:
         Dict with keys: previous, current, changes.  The ``changes`` value
-        contains ``added_images``, ``removed_images``, ``version_changes``, and
-        ``staleness_changes``.
+        contains ``added_images``, ``removed_images``, ``version_changes``,
+        ``staleness_changes``, ``metadata_changes``, and ``edge_changes``.
     """
     prev_nodes = set(previous.nodes.keys())
     curr_nodes = set(current.nodes.keys())
@@ -119,6 +119,47 @@ def diff_snapshots(previous: Graph, current: Graph) -> dict:
                 }
             )
 
+    # Metadata changes — registry_metadata diffs (size_bytes, build_date, digest)
+    metadata_changes: list[dict] = []
+    for node_id in prev_nodes & curr_nodes:
+        prev_meta = previous.nodes[node_id].registry_metadata
+        curr_meta = current.nodes[node_id].registry_metadata
+        for field in ("size_bytes", "build_date", "digest"):
+            prev_val = getattr(prev_meta, field)
+            curr_val = getattr(curr_meta, field)
+            if prev_val != curr_val and (prev_val is not None or curr_val is not None):
+                metadata_changes.append(
+                    {
+                        "image": node_id,
+                        "field": field,
+                        "previous": prev_val,
+                        "current": curr_val,
+                    }
+                )
+
+    # Consumers affected — for version changes, list which nodes consume the changed image
+    for vc in version_changes:
+        image_id = vc["image"]
+        consumers = []
+        for edge in current.edges:
+            if edge.target == image_id and edge.relationship.value == "consumes":
+                consumers.append(edge.source)
+        vc["consumers_affected"] = consumers
+
+    # Edge changes — edges added/removed between snapshots
+    prev_edge_set = {(e.source, e.target, e.relationship.value) for e in previous.edges}
+    curr_edge_set = {(e.source, e.target, e.relationship.value) for e in current.edges}
+    edge_changes = {
+        "added": [
+            {"source": s, "target": t, "relationship": r}
+            for s, t, r in curr_edge_set - prev_edge_set
+        ],
+        "removed": [
+            {"source": s, "target": t, "relationship": r}
+            for s, t, r in prev_edge_set - curr_edge_set
+        ],
+    }
+
     return {
         "previous": previous.generated_at,
         "current": current.generated_at,
@@ -127,5 +168,7 @@ def diff_snapshots(previous: Graph, current: Graph) -> dict:
             "removed_images": removed,
             "version_changes": version_changes,
             "staleness_changes": staleness_changes,
+            "metadata_changes": metadata_changes,
+            "edge_changes": edge_changes,
         },
     }

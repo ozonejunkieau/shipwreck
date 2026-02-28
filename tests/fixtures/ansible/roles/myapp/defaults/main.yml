@@ -1,0 +1,6 @@
+---
+# Default variables for the myapp role
+app_image: registry.example.com/myapp
+app_version: "1.0"
+app_port: 8080
+app_replicas: 1

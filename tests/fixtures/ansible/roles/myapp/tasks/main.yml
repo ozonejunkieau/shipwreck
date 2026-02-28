@@ -1,0 +1,15 @@
+---
+# Role tasks that use variables from defaults/main.yml
+
+- name: Deploy myapp using role variables
+  community.docker.docker_container:
+    name: myapp
+    image: "{{ app_image }}:{{ app_version }}"
+    state: started
+    restart_policy: unless-stopped
+
+- name: Deploy myapp with registry variable
+  docker_container:
+    name: myapp_alt
+    image: "{{ app_image }}:latest"
+    state: started

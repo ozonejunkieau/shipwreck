@@ -1,0 +1,18 @@
+# Simpler build-focused GitLab CI fixture
+
+variables:
+  CI_REGISTRY: "registry.example.com"
+  IMAGE_NAME: "myapp"
+
+build-image:
+  image: docker:24.0
+  script:
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME:latest .
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_TAG .
+    - docker push $CI_REGISTRY/$IMAGE_NAME:latest
+    - docker push $CI_REGISTRY/$IMAGE_NAME:$CI_COMMIT_TAG
+
+release:
+  image: alpine:3.18
+  script:
+    - echo "Releasing $IMAGE_NAME"

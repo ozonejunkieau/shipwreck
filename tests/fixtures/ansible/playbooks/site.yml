@@ -1,0 +1,22 @@
+---
+# Site playbook that includes tasks and uses roles
+
+- name: Deploy application stack
+  hosts: app_servers
+  become: true
+  vars:
+    app_registry: registry.example.com
+    deploy_version: "2.0"
+
+  tasks:
+    - name: Deploy main application
+      community.docker.docker_container:
+        name: app
+        image: "{{ app_registry }}/app:{{ deploy_version }}"
+        state: started
+
+    - name: Include additional deployment steps
+      include_tasks: ../tasks/deploy.yml
+
+  roles:
+    - myapp

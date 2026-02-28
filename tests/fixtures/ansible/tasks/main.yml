@@ -1,0 +1,39 @@
+---
+# Main task list with various Docker module forms and Jinja2 templates
+
+- name: Deploy web app with community.docker module
+  community.docker.docker_container:
+    name: webapp
+    image: registry.example.com/webapp:1.2.3
+    state: started
+    restart_policy: always
+
+- name: Deploy database with short-form module
+  docker_container:
+    name: postgres
+    image: postgres:16-alpine
+    state: started
+
+- name: Deploy app with Jinja2 template image
+  community.docker.docker_container:
+    name: myapp
+    image: "{{ app_registry }}/myapp:{{ app_version }}"
+    state: started
+
+- name: Deploy with lookup function
+  community.docker.docker_container:
+    name: versioned
+    image: "registry.example.com/app:{{ lookup('file', '/opt/versions/app.txt') }}"
+    state: started
+
+- name: Non-docker task with image key (should be ignored)
+  community.general.vmware_guest:
+    name: myvm
+    image: registry.example.com/should-not-extract:1.0
+    state: present
+
+- name: Include deployment tasks
+  include_tasks: deploy.yml
+
+- name: Import setup tasks
+  import_tasks: setup.yml

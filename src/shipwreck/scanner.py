@@ -12,11 +12,14 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from shipwreck.config import RepositoryConfig, ShipwreckConfig
 from shipwreck.models import Graph, ImageReference
+from shipwreck.parsers.ansible import AnsibleParser
 from shipwreck.parsers.bake import BakeParser
 from shipwreck.parsers.base import Parser
 from shipwreck.parsers.compose import ComposeParser
 from shipwreck.parsers.dockerfile import DockerfileParser
 from shipwreck.parsers.fallback import FallbackScanner
+from shipwreck.parsers.github_actions import GitHubActionsParser
+from shipwreck.parsers.gitlab_ci import GitLabCIParser
 
 if TYPE_CHECKING:
     pass
@@ -29,7 +32,13 @@ _SPECIFIC_PARSERS: list[type[Parser]] = [
     DockerfileParser,
     BakeParser,
     ComposeParser,
+    GitLabCIParser,
+    GitHubActionsParser,
+    AnsibleParser,
 ]
+
+# Hidden directories that contain scannable files and must not be skipped
+_ALLOWED_HIDDEN_DIRS: frozenset[str] = frozenset({".github", ".gitlab-ci"})
 
 # Files/directories to always skip
 _SKIP_DIRS: frozenset[str] = frozenset(
@@ -87,9 +96,12 @@ def _iter_repo_files(repo_path: Path) -> list[Path]:
     for path in repo_path.rglob("*"):
         if not path.is_file():
             continue
-        # Skip hidden dirs and known non-code dirs
+        # Skip hidden dirs and known non-code dirs, but allow certain hidden dirs
         parts = path.relative_to(repo_path).parts
-        if any(part.startswith(".") or part in _SKIP_DIRS for part in parts[:-1]):
+        if any(
+            (part.startswith(".") and part not in _ALLOWED_HIDDEN_DIRS) or part in _SKIP_DIRS
+            for part in parts[:-1]
+        ):
             continue
         if path.suffix in _SKIP_EXTENSIONS:
             continue
@@ -204,11 +216,36 @@ def scan(
             all_references.extend(refs)
             progress.update(task, description=f"[green]✓[/green] {repo_name} ({len(refs)} refs)")
 
+    # --- Resolution phase ---
+    if config.resolve_env_vars:
+        from shipwreck.resolution.env import resolve_env
+
+        all_references = resolve_env(all_references)
+
+    from shipwreck.resolution.bake import resolve_bake
+    from shipwreck.resolution.compose import resolve_compose
+
+    all_references = resolve_compose(all_references)
+    all_references = resolve_bake(all_references)
+
+    from shipwreck.resolution.ansible import resolve_ansible_simple
+
+    ansible_vars: dict[str, str] = {}
+    for ref in all_references:
+        if ref.source.parser == "ansible" and "role_vars" in ref.metadata:
+            ansible_vars.update(ref.metadata["role_vars"])
+    all_references = resolve_ansible_simple(all_references, ansible_vars)
+
     # Build graph
     config_hash = _hash_config(config)
     generated_at = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     graph = build_graph(all_references, config, generated_at=generated_at)
     graph.config_hash = config_hash
+
+    # Record Ansible environment in graph if configured
+    if config.ansible:
+        graph.environment.ansible_inventory = config.ansible.inventory
+        graph.environment.ansible_limit = config.ansible.limit
 
     # Classify and score
     classify_nodes(graph, config.classification)

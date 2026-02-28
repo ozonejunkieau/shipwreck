@@ -1,0 +1,11 @@
+# shipwreck-minimal.yaml — minimal configuration
+#
+# Only 'repositories' is required. Everything else uses defaults.
+# Run: shipwreck hunt --config shipwreck-minimal.yaml
+
+repositories:
+  - url: git@github.com:myorg/base-images.git
+    ref: main
+
+  - url: git@github.com:myorg/myapp.git
+    ref: main

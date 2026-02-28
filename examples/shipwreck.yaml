@@ -1,0 +1,185 @@
+# shipwreck.yaml — full example configuration
+#
+# This file documents every supported option.
+# Copy and trim to suit your environment; only 'repositories' is required.
+
+# ---------------------------------------------------------------------------
+# Registries
+#
+# Registries listed here can be queried by 'lookout' for staleness data.
+# Registries marked internal: true are queried without any prompts.
+# ---------------------------------------------------------------------------
+registries:
+  - name: internal
+    url: registry.example.com
+    auth_env: REGISTRY_AUTH_TOKEN   # name of the env var holding the auth token
+    internal: true
+
+  - name: dockerhub
+    url: docker.io
+    internal: false                 # requires approval or allowlist entry
+
+  - name: ghcr
+    url: ghcr.io
+    internal: false
+
+# ---------------------------------------------------------------------------
+# Registry policy
+#
+# Controls whether and how external (non-internal) registries are queried.
+# In non-interactive mode (--yes / CI), external registries not in the
+# allowlist are silently skipped with a warning.
+# ---------------------------------------------------------------------------
+registry_policy:
+  # Prompt before querying registries not marked internal: true
+  prompt_external: true
+  # Skip the prompt for these specific external registries
+  external_allowlist:
+    - docker.io
+    - ghcr.io
+
+# ---------------------------------------------------------------------------
+# Repositories
+#
+# Remote repos are cloned to .shipwreck/repos/ and kept up to date with
+# git pull on each run. Local path repos are scanned in-place.
+# ---------------------------------------------------------------------------
+repositories:
+  - url: git@gitlab.example.com:infra/base-images.git
+    ref: main
+    name: base-images             # optional; derived from the URL if omitted
+
+  - url: git@gitlab.example.com:apps/myapp.git
+    ref: main
+
+  - url: git@gitlab.example.com:apps/worker.git
+    ref: release/v2
+
+  - url: https://gitlab.example.com/infra/deploy.git
+    ref: main
+    name: deploy                  # HTTPS URLs work too; provide name explicitly if desired
+
+  - path: /home/user/projects/local-service
+    name: local-service           # local checkout scanned directly (no git pull)
+
+# ---------------------------------------------------------------------------
+# Discovery
+#
+# Auto-discover repositories from a GitLab group.
+# Use 'shipwreck plunder' to populate this section interactively, then
+# review and commit the result.
+# ---------------------------------------------------------------------------
+discovery:
+  - type: gitlab_group
+    url: https://gitlab.example.com
+    group: my-org/containers
+    auth_env: GITLAB_TOKEN
+    include_subgroups: true
+    include_pattern: "^(infra|apps)/.*"    # only paths matching this regex
+    exclude_pattern: ".*-archive$"         # skip paths matching this regex
+
+# ---------------------------------------------------------------------------
+# Ansible variable resolution
+#
+# When set, Shipwreck generates a minimal playbook and runs ansible-playbook
+# to resolve Jinja2 templates, lookup() calls, and vault-encrypted variables.
+# Without this, unresolved {{ variable }} references are kept as-is.
+# ---------------------------------------------------------------------------
+ansible:
+  inventory: /path/to/inventory
+  vault_password_file: /path/to/.vault_pass   # optional; omit if not using vault
+  limit: production                            # optional; ansible --limit value
+
+# ---------------------------------------------------------------------------
+# Environment variable resolution
+#
+# When true, the current process environment is used to resolve:
+#   - Docker Compose ${VARIABLE:-default} syntax
+#   - GitLab CI $VARIABLE references
+#   - GitHub Actions ${{ env.VARIABLE }} references
+#   - Dockerfile ARG values that reference env vars
+#
+# Opt-in because the resolved values depend on where shipwreck is run.
+# ---------------------------------------------------------------------------
+resolve_env_vars: false
+
+# ---------------------------------------------------------------------------
+# Aliases
+#
+# Treat variant images as the same canonical node in the graph.
+# Prevents graph explosion from build pipeline transforms such as
+# post-build image flattening or optimisation steps.
+#
+# Pattern rules use regex with capture groups {1}, {2}, ...
+# Explicit rules use 'from' → 'canonical'.
+# ---------------------------------------------------------------------------
+aliases:
+  # Strip "-clean" suffix: myapp:1.0-clean → canonical myapp:1.0 (variant: optimised)
+  - pattern: "^(.+):(.+)-clean$"
+    canonical: "{1}:{2}"
+    variant: "optimised"
+
+  # Strip "-flat" suffix
+  - pattern: "^(.+):(.+)-flat$"
+    canonical: "{1}:{2}"
+    variant: "flattened"
+
+  # Explicit: releases registry maps to the builds registry
+  - from: "registry.example.com/releases/myapp"
+    canonical: "registry.example.com/builds/myapp"
+    variant: "release"
+
+# ---------------------------------------------------------------------------
+# Version schemes
+#
+# Defines how image tags are parsed and compared to determine staleness.
+# Matched in order using fnmatch against the image name (without tag).
+# A semver catch-all is automatically appended if no "*" pattern is defined.
+# ---------------------------------------------------------------------------
+version_schemes:
+  # Wolfi OS images are tagged with Linux epoch timestamps (purely numeric)
+  - image_pattern: "registry.example.com/wolfi/*"
+    type: numeric
+
+  # Snapshot images use YYYYMMDD date tags
+  - image_pattern: "registry.example.com/snapshots/*"
+    type: date
+    format: "%Y%m%d"
+
+  # Custom images use tags like "v1.2.3-alpine" — extract and compare semver
+  - image_pattern: "registry.example.com/custom/*"
+    type: regex
+    extract: "^v?(\\d+\\.\\d+\\.\\d+)"
+    compare: semver
+
+  # Default: semver for everything else
+  - image_pattern: "*"
+    type: semver
+
+# ---------------------------------------------------------------------------
+# Classification rules
+#
+# Override the default heuristic classification of graph nodes.
+# Rules are applied in order; first match wins.
+# Valid classes: base, intermediate, product, test
+#
+# Default heuristics (applied when no rule matches):
+#   base         — external image only appearing in FROM
+#   intermediate — built internally, only consumed by other builds
+#   product      — referenced in Ansible or compose for deployment
+#   test         — only referenced from test/, ci/, .gitlab-ci*, .github/workflows
+# ---------------------------------------------------------------------------
+classification:
+  rules:
+    - path_pattern: "**/ansible/**"
+      class: product
+    - path_pattern: "**/test/**"
+      class: test
+    - path_pattern: "**/.gitlab-ci*"
+      class: test
+    - path_pattern: "**/.github/workflows/**"
+      class: test
+    - image_pattern: "registry.example.com/base/*"
+      class: base
+    - image_pattern: "registry.example.com/intermediate/*"
+      class: intermediate

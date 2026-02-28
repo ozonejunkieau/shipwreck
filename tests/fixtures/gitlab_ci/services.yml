@@ -1,0 +1,18 @@
+# Services-focused GitLab CI fixture — string and object forms
+
+test-with-services:
+  image: python:3.12
+  services:
+    - postgres:16
+    - redis:7-alpine
+    - name: elasticsearch:8.11.0
+      alias: es
+    - name: mysql:8.0
+      alias: database
+      variables:
+        MYSQL_ROOT_PASSWORD: secret
+
+integration:
+  image: node:20-alpine
+  services:
+    - docker:24.0-dind

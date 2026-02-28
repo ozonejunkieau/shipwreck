@@ -8,85 +8,129 @@
         /* ── Reset & base ─────────────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
         :root {
             --radius: 6px;
-            --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             --transition: 150ms ease;
             --header-h: 56px;
+            --sidebar-w: 260px;
         }
 
         /* ── Dark theme (default) ─────────────────────────────────────── */
         :root[data-theme="dark"] {
-            --bg: #0f0f0f;
-            --surface: #1a1a1a;
-            --surface2: #222222;
+            --bg: #0a0a0a;
+            --bg-grid: rgba(255,255,255,0.03);
+            --surface: #141414;
+            --surface2: #1e1e1e;
+            --surface3: #252525;
             --border: #2d2d2d;
             --text: #e5e5e5;
-            --text-muted: #9ca3af;
+            --text-muted: #737373;
+            --text-dim: #525252;
             --accent: #3b82f6;
             --accent-hover: #2563eb;
-            --node-base: #374151;
-            --node-product: #14532d;
-            --node-intermediate: #1e3a5f;
-            --node-test: #422006;
-            --node-base-border: #6b7280;
-            --node-product-border: #22c55e;
-            --node-intermediate-border: #3b82f6;
-            --node-test-border: #d97706;
-            --edge-color: #4b5563;
-            --edge-highlight: #3b82f6;
-            --tooltip-bg: #1f1f1f;
+            --badge-base: #374151;
+            --badge-base-text: #9ca3af;
+            --badge-application: #1e3a5f;
+            --badge-application-text: #60a5fa;
+            --badge-middleware: #312e81;
+            --badge-middleware-text: #a5b4fc;
+            --badge-utility: #14532d;
+            --badge-utility-text: #4ade80;
+            --badge-external: #451a03;
+            --badge-external-text: #fb923c;
+            --badge-unknown: #1c1c1c;
+            --badge-unknown-text: #525252;
+            --badge-test: #431407;
+            --badge-test-text: #fb923c;
+            --staleness-current: #14532d;
+            --staleness-current-text: #4ade80;
+            --staleness-behind: #713f12;
+            --staleness-behind-text: #fbbf24;
+            --staleness-major: #7f1d1d;
+            --staleness-major-text: #f87171;
+            --staleness-unknown: #1c1c1c;
+            --staleness-unknown-text: #525252;
+            --card-border: #2d2d2d;
+            --card-hover-border: #404040;
+            --tag-bg: rgba(59,130,246,0.12);
+            --tag-border: rgba(59,130,246,0.25);
+            --tag-text: #60a5fa;
+            --tooltip-bg: #1a1a1a;
+            --highlight-selected: #3b82f6;
             --highlight-upstream: #f59e0b;
             --highlight-downstream: #22c55e;
-            --highlight-selected: #3b82f6;
-            --dimmed-opacity: 0.2;
-            --btn-bg: #272727;
-            --btn-border: #3d3d3d;
-            --btn-text: #e5e5e5;
-            --input-bg: #1a1a1a;
-            --scrollbar-bg: #1a1a1a;
-            --scrollbar-thumb: #3d3d3d;
+            --dimmed-opacity: 0.35;
+            --edge-color: #404040;
+            --scrollbar-bg: #0a0a0a;
+            --scrollbar-thumb: #2d2d2d;
+            --diff-added: #14532d;
+            --diff-added-border: #22c55e;
+            --diff-removed: #7f1d1d;
+            --diff-removed-border: #ef4444;
+            --diff-changed: #713f12;
+            --diff-changed-border: #f59e0b;
         }
 
         /* ── Light theme ──────────────────────────────────────────────── */
         :root[data-theme="light"] {
             --bg: #f9fafb;
+            --bg-grid: rgba(0,0,0,0.04);
             --surface: #ffffff;
             --surface2: #f3f4f6;
+            --surface3: #e5e7eb;
             --border: #e5e7eb;
             --text: #111827;
             --text-muted: #6b7280;
+            --text-dim: #9ca3af;
             --accent: #2563eb;
             --accent-hover: #1d4ed8;
-            --node-base: #e5e7eb;
-            --node-product: #dcfce7;
-            --node-intermediate: #dbeafe;
-            --node-test: #fef3c7;
-            --node-base-border: #6b7280;
-            --node-product-border: #16a34a;
-            --node-intermediate-border: #2563eb;
-            --node-test-border: #d97706;
-            --edge-color: #9ca3af;
-            --edge-highlight: #2563eb;
+            --badge-base: #f3f4f6;
+            --badge-base-text: #4b5563;
+            --badge-application: #eff6ff;
+            --badge-application-text: #1d4ed8;
+            --badge-middleware: #f5f3ff;
+            --badge-middleware-text: #6d28d9;
+            --badge-utility: #f0fdf4;
+            --badge-utility-text: #15803d;
+            --badge-external: #fff7ed;
+            --badge-external-text: #c2410c;
+            --badge-unknown: #f9fafb;
+            --badge-unknown-text: #9ca3af;
+            --badge-test: #fff7ed;
+            --badge-test-text: #c2410c;
+            --staleness-current: #f0fdf4;
+            --staleness-current-text: #15803d;
+            --staleness-behind: #fffbeb;
+            --staleness-behind-text: #b45309;
+            --staleness-major: #fef2f2;
+            --staleness-major-text: #b91c1c;
+            --staleness-unknown: #f9fafb;
+            --staleness-unknown-text: #9ca3af;
+            --card-border: #e5e7eb;
+            --card-hover-border: #d1d5db;
+            --tag-bg: rgba(37,99,235,0.08);
+            --tag-border: rgba(37,99,235,0.25);
+            --tag-text: #2563eb;
             --tooltip-bg: #ffffff;
+            --highlight-selected: #2563eb;
             --highlight-upstream: #d97706;
             --highlight-downstream: #16a34a;
-            --highlight-selected: #2563eb;
-            --dimmed-opacity: 0.15;
-            --btn-bg: #ffffff;
-            --btn-border: #d1d5db;
-            --btn-text: #374151;
-            --input-bg: #ffffff;
+            --dimmed-opacity: 0.3;
+            --edge-color: #d1d5db;
             --scrollbar-bg: #f3f4f6;
             --scrollbar-thumb: #d1d5db;
+            --diff-added: #f0fdf4;
+            --diff-added-border: #16a34a;
+            --diff-removed: #fef2f2;
+            --diff-removed-border: #dc2626;
+            --diff-changed: #fffbeb;
+            --diff-changed-border: #d97706;
         }
 
         /* ── Global ───────────────────────────────────────────────────── */
         html, body {
             height: 100%;
-            overflow: hidden;
             background: var(--bg);
             color: var(--text);
             font-family: var(--font);
@@ -94,15 +138,23 @@
             line-height: 1.5;
         }
 
-        ::-webkit-scrollbar { width: 6px; background: var(--scrollbar-bg); }
-        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
-
-        /* ── Layout ───────────────────────────────────────────────────── */
         body {
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
+        ::-webkit-scrollbar { width: 6px; background: var(--scrollbar-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+
+        /* ── Keyboard focus indicator ─────────────────────────────────── */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: var(--radius);
+        }
+
+        /* ── Header ───────────────────────────────────────────────────── */
         header {
             height: var(--header-h);
             min-height: var(--header-h);
@@ -116,55 +168,210 @@
             flex-shrink: 0;
         }
 
-        main {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* ── Header elements ──────────────────────────────────────────── */
         .logo {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--text);
             white-space: nowrap;
-            letter-spacing: -0.01em;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
         }
 
-        .stats {
+        .logo-icon {
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        .header-stats {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             color: var(--text-muted);
             font-size: 12px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .stats span {
+        .header-stat {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
 
-        .stats span::before {
-            content: "";
-            display: inline-block;
+        .header-stat-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
             background: var(--accent);
+            flex-shrink: 0;
         }
 
-        .controls {
+        .header-controls {
             display: flex;
             align-items: center;
             gap: 8px;
             margin-left: auto;
-            flex-wrap: nowrap;
         }
 
-        /* ── Filter input ─────────────────────────────────────────────── */
-        #search {
-            background: var(--input-bg);
+        /* ── Staleness summary bar ────────────────────────────────────── */
+        #staleness-bar {
+            flex-shrink: 0;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .staleness-bar-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .staleness-bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--surface3);
+            border-radius: 3px;
+            overflow: hidden;
+            display: flex;
+            max-width: 300px;
+        }
+
+        .staleness-bar-segment {
+            height: 100%;
+            transition: width var(--transition);
+        }
+
+        .staleness-bar-segment.current  { background: #22c55e; }
+        .staleness-bar-segment.behind   { background: #f59e0b; }
+        .staleness-bar-segment.major    { background: #ef4444; }
+        .staleness-bar-segment.unknown  { background: #525252; }
+
+        .staleness-pills {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .staleness-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: filter var(--transition), box-shadow var(--transition);
+        }
+
+        .staleness-pill:hover { filter: brightness(1.15); }
+
+        .staleness-pill.active {
+            box-shadow: 0 0 0 2px currentColor;
+        }
+
+        .staleness-pill.current {
+            background: var(--staleness-current);
+            color: var(--staleness-current-text);
+            border-color: rgba(34,197,94,0.2);
+        }
+
+        .staleness-pill.behind {
+            background: var(--staleness-behind);
+            color: var(--staleness-behind-text);
+            border-color: rgba(245,158,11,0.2);
+        }
+
+        .staleness-pill.major {
+            background: var(--staleness-major);
+            color: var(--staleness-major-text);
+            border-color: rgba(239,68,68,0.2);
+        }
+
+        .staleness-pill.unknown {
+            background: var(--staleness-unknown);
+            color: var(--staleness-unknown-text);
+            border-color: transparent;
+        }
+
+        .staleness-pill-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ── Main layout ──────────────────────────────────────────────── */
+        .workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ── Sidebar ──────────────────────────────────────────────────── */
+        #sidebar {
+            width: var(--sidebar-w);
+            min-width: var(--sidebar-w);
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+            transition: width 200ms ease, min-width 200ms ease;
+        }
+
+        #sidebar.collapsed {
+            width: 0;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .sidebar-section {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        /* ── Filter inputs ────────────────────────────────────────────── */
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .filter-select,
+        .filter-input {
+            background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: var(--radius);
             color: var(--text);
@@ -173,61 +380,126 @@
             height: 30px;
             padding: 0 10px;
             outline: none;
-            width: 180px;
+            width: 100%;
             transition: border-color var(--transition);
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .filter-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23737373' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            padding-right: 28px;
+            cursor: pointer;
+        }
+
+        .filter-select::placeholder,
+        .filter-input::placeholder { color: var(--text-muted); }
+
+        .filter-select:focus,
+        .filter-input:focus { border-color: var(--accent); }
+
+        .filter-select option {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        /* ── Search bar (header) ──────────────────────────────────────── */
+        .search-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        #search {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-family: var(--font);
+            font-size: 12px;
+            height: 30px;
+            padding: 0 32px 0 28px;
+            outline: none;
+            width: 200px;
+            transition: border-color var(--transition), width var(--transition);
         }
 
         #search::placeholder { color: var(--text-muted); }
-        #search:focus { border-color: var(--accent); }
+        #search:focus { border-color: var(--accent); width: 240px; }
+
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            color: var(--text-muted);
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        .search-shortcut {
+            position: absolute;
+            right: 8px;
+            font-size: 10px;
+            color: var(--text-dim);
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 0 4px;
+            line-height: 16px;
+            pointer-events: none;
+        }
 
         /* ── Buttons ──────────────────────────────────────────────────── */
-        button {
-            background: var(--btn-bg);
-            border: 1px solid var(--btn-border);
+        .btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
             border-radius: var(--radius);
-            color: var(--btn-text);
+            color: var(--text-muted);
             cursor: pointer;
             font-family: var(--font);
             font-size: 12px;
             height: 30px;
             padding: 0 10px;
-            transition: background var(--transition), border-color var(--transition);
+            transition: background var(--transition), border-color var(--transition), color var(--transition);
             white-space: nowrap;
-        }
-
-        button:hover {
-            background: var(--surface2);
-            border-color: var(--accent);
-        }
-
-        /* ── Checkbox labels ──────────────────────────────────────────── */
-        label {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 5px;
-            color: var(--text-muted);
-            font-size: 12px;
-            cursor: pointer;
-            white-space: nowrap;
-            user-select: none;
         }
 
-        label input[type="checkbox"] {
-            accent-color: var(--accent);
-            cursor: pointer;
-            width: 13px;
-            height: 13px;
+        .btn:hover {
+            background: var(--surface3);
+            border-color: var(--border);
+            color: var(--text);
+        }
+
+        .btn-icon {
+            width: 30px;
+            padding: 0;
+            justify-content: center;
         }
 
         /* ── Separator ────────────────────────────────────────────────── */
         .sep {
             width: 1px;
-            height: 20px;
+            height: 18px;
             background: var(--border);
             flex-shrink: 0;
         }
 
-        /* ── SVG canvas ───────────────────────────────────────────────── */
+        /* ── Main graph area ──────────────────────────────────────────── */
+        #graph-area {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            /* Subtle grid background */
+            background-image:
+                linear-gradient(var(--bg-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
         #graph-svg {
             width: 100%;
             height: 100%;
@@ -240,30 +512,48 @@
         /* ── dagre-d3 node overrides ──────────────────────────────────── */
         .node rect, .node ellipse, .node polygon {
             fill: var(--surface2) !important;
-            stroke: var(--border) !important;
+            stroke: var(--card-border) !important;
             stroke-width: 1.5px;
-            rx: 6;
-            ry: 6;
+            rx: 8;
+            ry: 8;
         }
 
-        /* classification-based fills */
-        .node-base rect         { fill: var(--node-base) !important; stroke: var(--node-base-border) !important; stroke-dasharray: 6 3; }
-        .node-intermediate rect { fill: var(--node-intermediate) !important; stroke: var(--node-intermediate-border) !important; stroke-dasharray: 6 3; }
-        .node-product rect      { fill: var(--node-product) !important; stroke: var(--node-product-border) !important; }
-        .node-test rect         { fill: var(--node-test) !important; stroke: var(--node-test-border) !important; stroke-dasharray: 3 3; }
+        /* classification fills */
+        .node-base rect         { fill: var(--surface2) !important; stroke: var(--card-border) !important; }
+        .node-application rect  { fill: var(--surface2) !important; stroke: #3b82f6 !important; stroke-opacity: 0.4; }
+        .node-middleware rect   { fill: var(--surface2) !important; stroke: #8b5cf6 !important; stroke-opacity: 0.4; }
+        .node-utility rect      { fill: var(--surface2) !important; stroke: #22c55e !important; stroke-opacity: 0.4; }
+        .node-external rect     { fill: var(--surface2) !important; stroke: #f97316 !important; stroke-opacity: 0.4; stroke-dasharray: 5 3; }
+        .node-unknown rect      { fill: var(--surface2) !important; stroke: var(--card-border) !important; stroke-dasharray: 3 3; }
+        .node-product rect      { fill: var(--surface2) !important; stroke: #22c55e !important; stroke-opacity: 0.5; }
+        .node-test rect         { fill: var(--surface2) !important; stroke: #f59e0b !important; stroke-opacity: 0.4; stroke-dasharray: 4 3; }
 
         /* highlight states */
-        .node.highlight-selected rect { stroke: var(--highlight-selected) !important; stroke-width: 2.5px !important; stroke-dasharray: none !important; }
-        .node.highlight-upstream rect { stroke: var(--highlight-upstream) !important; stroke-width: 2px !important; }
-        .node.highlight-downstream rect { stroke: var(--highlight-downstream) !important; stroke-width: 2px !important; }
-        .node.dimmed { opacity: var(--dimmed-opacity); }
+        .node.highlight-selected rect { stroke: var(--highlight-selected) !important; stroke-width: 2px !important; stroke-opacity: 1 !important; stroke-dasharray: none !important; }
+        .node.highlight-upstream rect { stroke: var(--highlight-upstream) !important; stroke-width: 1.5px !important; stroke-opacity: 0.8 !important; }
+        .node.highlight-downstream rect { stroke: var(--highlight-downstream) !important; stroke-width: 1.5px !important; stroke-opacity: 0.8 !important; }
+        .node.dimmed { opacity: var(--dimmed-opacity); filter: grayscale(0.8); transition: opacity 200ms ease, filter 200ms ease; }
+
+        /* diff overlays */
+        .node-diff-added rect    { stroke: var(--diff-added-border) !important; stroke-width: 2px !important; box-shadow: 0 0 12px var(--diff-added-border); }
+        .node-diff-removed       { opacity: 0.5; }
+        .node-diff-removed rect  { stroke: var(--diff-removed-border) !important; stroke-width: 2px !important; stroke-dasharray: 4 3 !important; }
+        .node-diff-changed rect  { stroke: var(--diff-changed-border) !important; stroke-width: 2px !important; }
 
         /* ── Node inner HTML ──────────────────────────────────────────── */
         .node-inner {
             padding: 8px 10px;
-            min-width: 120px;
-            max-width: 220px;
+            min-width: 130px;
+            max-width: 200px;
             pointer-events: none;
+        }
+
+        .node-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 5px;
         }
 
         .node-title {
@@ -273,43 +563,77 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 4px;
             letter-spacing: -0.01em;
+            flex: 1;
+            min-width: 0;
         }
+
+        .node-cls-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 1px 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .node-cls-base        { background: var(--badge-base);        color: var(--badge-base-text); }
+        .node-cls-application { background: var(--badge-application);  color: var(--badge-application-text); }
+        .node-cls-middleware  { background: var(--badge-middleware);   color: var(--badge-middleware-text); }
+        .node-cls-utility     { background: var(--badge-utility);      color: var(--badge-utility-text); }
+        .node-cls-external    { background: var(--badge-external);     color: var(--badge-external-text); }
+        .node-cls-unknown     { background: var(--badge-unknown);      color: var(--badge-unknown-text); }
+        .node-cls-product     { background: var(--badge-utility);      color: var(--badge-utility-text); }
+        .node-cls-test        { background: var(--badge-test);         color: var(--badge-test-text); }
 
         .node-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 3px;
-            margin-bottom: 3px;
+            gap: 2px;
+            margin-bottom: 4px;
         }
 
-        .tag {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+        .node-tag {
+            background: var(--tag-bg);
+            border: 1px solid var(--tag-border);
             border-radius: 3px;
-            color: var(--accent);
-            font-size: 10px;
+            color: var(--tag-text);
+            font-size: 9px;
             padding: 0 4px;
-            line-height: 16px;
+            line-height: 14px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
         }
 
-        :root[data-theme="light"] .tag {
-            background: rgba(37, 99, 235, 0.08);
-            border-color: rgba(37, 99, 235, 0.25);
-            color: var(--accent);
+        .node-tag-overflow {
+            color: var(--text-dim);
+            font-style: italic;
         }
 
-        .crit-badge {
+        .node-staleness-badge {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
+            gap: 3px;
             border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
+            font-size: 9px;
+            font-weight: 500;
             padding: 1px 5px;
-            color: #fff;
-            margin-top: 3px;
+            margin-top: 2px;
+        }
+
+        .node-staleness-badge.current      { background: var(--staleness-current); color: var(--staleness-current-text); }
+        .node-staleness-badge.behind       { background: var(--staleness-behind); color: var(--staleness-behind-text); }
+        .node-staleness-badge.major_behind { background: var(--staleness-major); color: var(--staleness-major-text); }
+        .node-staleness-badge.unknown      { background: var(--staleness-unknown); color: var(--staleness-unknown-text); }
+
+        .staleness-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: currentColor;
         }
 
         /* ── Edge styles ──────────────────────────────────────────────── */
@@ -319,16 +643,49 @@
             fill: none;
         }
 
-        .edgePath.edge-builds_from path { stroke-dasharray: none; }
-        .edgePath.edge-produces path    { stroke-dasharray: 6 3; }
-        .edgePath.edge-consumes path    { stroke-dasharray: 2 3; }
+        .edgePath.edge-builds_from path { stroke: #3b82f6 !important; opacity: 0.6; }
+        .edgePath.edge-produces path    { stroke: #22c55e !important; opacity: 0.6; stroke-dasharray: 6 3; }
+        .edgePath.edge-consumes path    { stroke: #f97316 !important; opacity: 0.6; stroke-dasharray: 2 4; }
+        .edgePath.edge-variant_of path  { stroke: #8b5cf6 !important; opacity: 0.6; stroke-dasharray: 4 2; }
+        .edgePath.edge-alias_of path    { stroke: #6b7280 !important; opacity: 0.6; stroke-dasharray: 2 2; }
 
-        .edgePath.highlight-edge path { stroke: var(--edge-highlight) !important; stroke-width: 2px !important; }
-        .edgePath.dimmed-edge { opacity: var(--dimmed-opacity); }
+        .edgePath.highlight-edge path {
+            stroke-opacity: 1 !important;
+            stroke-width: 2px !important;
+        }
+
+        .edgePath.dimmed-edge { opacity: 0.08; }
+
+        /* animated dash on highlight */
+        .edgePath.highlight-edge path {
+            stroke-dashoffset: 0;
+            animation: dashFlow 1s linear infinite;
+        }
+
+        @keyframes dashFlow {
+            from { stroke-dashoffset: 0; }
+            to   { stroke-dashoffset: -24; }
+        }
+
+        .edgePath.edge-builds_from.highlight-edge path { stroke-dasharray: 6 3; }
+        .edgePath.edge-produces.highlight-edge path    { stroke-dasharray: 6 3; }
+        .edgePath.edge-consumes.highlight-edge path    { stroke-dasharray: 6 3; }
+        .edgePath.edge-variant_of.highlight-edge path  { stroke-dasharray: 6 3; }
+        .edgePath.edge-alias_of.highlight-edge path    { stroke-dasharray: 6 3; }
 
         /* arrowhead */
         .edgePath marker path { fill: var(--edge-color) !important; }
-        .edgePath.highlight-edge marker path { fill: var(--edge-highlight) !important; }
+
+        /* edge label text */
+        .edge-label-text {
+            font-size: 9px;
+            fill: var(--text-muted);
+            font-family: var(--font);
+            pointer-events: none;
+        }
+
+        /* toggle edge label visibility */
+        .hide-edge-labels .edgeLabel { display: none; }
 
         /* ── Tooltip ──────────────────────────────────────────────────── */
         #tooltip {
@@ -337,21 +694,29 @@
             background: var(--tooltip-bg);
             border: 1px solid var(--border);
             border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             padding: 12px 14px;
-            max-width: 320px;
+            max-width: 300px;
             pointer-events: none;
-            transition: opacity 120ms ease;
+            opacity: 0;
+            transform: scale(0.96);
+            transition: opacity 120ms ease, transform 120ms ease;
+        }
+
+        #tooltip.visible {
+            opacity: 1;
+            transform: scale(1);
         }
 
         #tooltip.hidden { display: none; }
 
         .tooltip-title {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text);
             margin-bottom: 8px;
             word-break: break-all;
+            letter-spacing: -0.01em;
         }
 
         .tooltip-body {
@@ -369,7 +734,7 @@
         .tt-label {
             color: var(--text-muted);
             font-size: 11px;
-            min-width: 80px;
+            min-width: 72px;
             flex-shrink: 0;
         }
 
@@ -377,37 +742,41 @@
             color: var(--text);
             font-size: 11px;
             word-break: break-all;
-        }
-
-        .tt-badge {
-            display: inline-block;
-            border-radius: 3px;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 1px 6px;
-            color: #fff;
+            flex: 1;
+            min-width: 0;
         }
 
         .tt-tag {
             display: inline-block;
-            background: rgba(59,130,246,0.12);
-            border: 1px solid rgba(59,130,246,0.25);
+            background: var(--tag-bg);
+            border: 1px solid var(--tag-border);
             border-radius: 3px;
-            color: var(--accent);
+            color: var(--tag-text);
             font-size: 10px;
             padding: 0 4px;
             line-height: 16px;
-            margin: 1px 1px 0 0;
+            margin: 1px 2px 0 0;
         }
 
         .tt-source {
             background: var(--surface2);
             border-radius: 4px;
-            padding: 4px 6px;
+            padding: 3px 6px;
             font-size: 10px;
             color: var(--text-muted);
-            font-family: "JetBrains Mono", "Fira Code", monospace;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
             word-break: break-all;
+            margin-bottom: 2px;
+        }
+
+        .tt-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            padding: 1px 6px;
         }
 
         /* ── Empty state ──────────────────────────────────────────────── */
@@ -425,7 +794,17 @@
 
         #empty-state.hidden { display: none; }
 
-        /* ── Filter badge ─────────────────────────────────────────────── */
+        .empty-icon {
+            font-size: 28px;
+            opacity: 0.4;
+        }
+
+        .empty-text {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* ── Filter info badge ────────────────────────────────────────── */
         #filter-info {
             position: absolute;
             bottom: 16px;
@@ -433,10 +812,11 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 6px 10px;
+            padding: 5px 10px;
             font-size: 11px;
             color: var(--text-muted);
             pointer-events: none;
+            z-index: 10;
         }
 
         #filter-info.hidden { display: none; }
@@ -454,13 +834,16 @@
             color: var(--text-muted);
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
+            z-index: 10;
         }
 
         .legend-title {
             font-weight: 600;
             color: var(--text);
-            font-size: 11px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
             margin-bottom: 2px;
         }
 
@@ -471,86 +854,402 @@
         }
 
         .legend-line {
-            width: 28px;
+            width: 24px;
             height: 2px;
             flex-shrink: 0;
         }
 
         .legend-swatch {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 2px;
             flex-shrink: 0;
+        }
+
+        .legend-desc {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-left: 32px;
+            margin-top: -2px;
+        }
+
+        /* ── Source type dots ─────────────────────────────────────────── */
+        .source-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .source-dot-dockerfile      { background: #3b82f6; }
+        .source-dot-compose          { background: #22c55e; }
+        .source-dot-gitlab-ci        { background: #f97316; }
+        .source-dot-github-actions   { background: #a855f7; }
+        .source-dot-bake             { background: #14b8a6; }
+        .source-dot-ansible          { background: #ef4444; }
+        .source-dot-yaml             { background: #6b7280; }
+        .source-dot-other            { background: #6b7280; }
+
+        /* ── Source tree (grouped by type) ──────────────────────────────── */
+        .source-tree-group {
+            margin-bottom: 2px;
+        }
+
+        .source-tree-header {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            padding: 2px 0;
+            user-select: none;
+        }
+
+        .source-tree-caret {
+            display: inline-block;
+            width: 10px;
+            font-size: 8px;
+            text-align: center;
+            transition: transform var(--transition);
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .source-tree-group:not(.collapsed) > .source-tree-header .source-tree-caret {
+            transform: rotate(90deg);
+        }
+
+        .source-tree-count {
+            font-size: 9px;
+            color: var(--text-dim);
+            margin-left: auto;
+        }
+
+        .source-tree-children {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding-left: 15px;
+            overflow: hidden;
+            max-height: 500px;
+            transition: max-height 200ms ease;
+        }
+
+        .source-tree-group.collapsed > .source-tree-children {
+            max-height: 0;
+        }
+
+        /* ── Node stagger animation (opacity only — CSS transform would
+             override dagre-d3's SVG transform attribute positioning) ──── */
+        @keyframes nodeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .node { animation: nodeIn 300ms ease both; }
+
+        /* ── Sidebar active filter badge ──────────────────────────────── */
+        .active-filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 12px;
+            color: var(--accent);
+            font-size: 11px;
+            padding: 2px 8px;
+            margin-top: 4px;
+        }
+
+        /* ── Responsive: hide sidebar on mobile ───────────────────────── */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                z-index: 50;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+            }
+
+            #sidebar.collapsed {
+                transform: translateX(-100%);
+                width: var(--sidebar-w);
+                min-width: var(--sidebar-w);
+            }
+
+            #staleness-bar {
+                flex-wrap: wrap;
+            }
+
+            .header-stats {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">🏴‍☠️ Shipwreck</div>
-        <div class="stats">
-            <span>{{ total_images }} images</span>
-            <span>{{ total_edges }} edges</span>
-            <span>{{ graph.generated_at }}</span>
+    <!-- ── Header ───────────────────────────────────────────────────────── -->
+    <header role="banner">
+        <div class="logo" aria-label="Shipwreck dependency graph tool">
+            <span class="logo-icon" aria-hidden="true">S</span>
+            Shipwreck
         </div>
-        <div class="controls">
-            <input type="text" id="search" placeholder="Filter images…" autocomplete="off" />
-            <div class="sep"></div>
-            <label><input type="checkbox" id="toggle-base" checked> Base</label>
-            <label><input type="checkbox" id="toggle-test" checked> Test/CI</label>
-            <div class="sep"></div>
-            <button id="theme-toggle">☀️ Light</button>
-            <button id="reset-zoom">Reset zoom</button>
+
+        <nav class="header-stats" aria-label="Graph statistics">
+            <div class="header-stat">
+                <div class="header-stat-dot" aria-hidden="true"></div>
+                <span>{{ total_images }} image{{ 's' if total_images != 1 else '' }}</span>
+            </div>
+            <div class="header-stat">
+                <div class="header-stat-dot" aria-hidden="true"></div>
+                <span>{{ total_edges }} edge{{ 's' if total_edges != 1 else '' }}</span>
+            </div>
+            {% if graph.generated_at %}
+            <div class="header-stat">
+                <span>{{ graph.generated_at }}</span>
+            </div>
+            {% endif %}
+        </nav>
+
+        <div class="header-controls" role="toolbar" aria-label="Graph controls">
+            <div class="search-wrapper">
+                <svg class="search-icon" width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <input
+                    type="search"
+                    id="search"
+                    placeholder="Filter images…"
+                    autocomplete="off"
+                    aria-label="Search images by name"
+                    aria-controls="graph-area"
+                />
+                <span class="search-shortcut" aria-hidden="true">/</span>
+            </div>
+
+            <div class="sep" aria-hidden="true"></div>
+
+            <button class="btn btn-icon" id="sidebar-toggle" aria-label="Toggle filter sidebar" aria-expanded="true" aria-controls="sidebar">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="1" y="3" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+                    <rect x="1" y="7.25" width="10" height="1.5" rx="0.75" fill="currentColor"/>
+                    <rect x="1" y="11.5" width="7" height="1.5" rx="0.75" fill="currentColor"/>
+                </svg>
+            </button>
+            <button class="btn" id="reset-zoom" aria-label="Reset zoom to fit graph">Reset zoom</button>
+            <button class="btn" id="theme-toggle" aria-label="Toggle color theme">Light</button>
         </div>
     </header>
 
-    <main>
-        <svg id="graph-svg">
-            <g id="graph-container"></g>
-        </svg>
-
-        <div id="empty-state" class="hidden">
-            <span style="font-size:32px">🔍</span>
-            <span>No nodes match the current filters</span>
+    <!-- ── Staleness summary bar ─────────────────────────────────────────── -->
+    {% if total_images > 0 %}
+    <section id="staleness-bar" aria-label="Staleness summary">
+        <span class="staleness-bar-label">Staleness</span>
+        <div class="staleness-bar-track" role="img" aria-label="Staleness distribution bar">
+            <div class="staleness-bar-segment current"  id="sbar-current"  style="width:{{ staleness_pct.current }}%"></div>
+            <div class="staleness-bar-segment behind"   id="sbar-behind"   style="width:{{ staleness_pct.behind }}%"></div>
+            <div class="staleness-bar-segment major"    id="sbar-major"    style="width:{{ staleness_pct.major_behind }}%"></div>
+            <div class="staleness-bar-segment unknown"  id="sbar-unknown"  style="width:{{ staleness_pct.unknown }}%"></div>
         </div>
-
-        <div id="filter-info" class="hidden"></div>
-
-        <div id="legend">
-            <div class="legend-title">Classification</div>
-            <div class="legend-item">
-                <div class="legend-swatch" style="background:#374151; border:2px dashed #6b7280"></div>
-                <span>Base</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-swatch" style="background:#1e3a5f; border:2px dashed #3b82f6"></div>
-                <span>Intermediate</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-swatch" style="background:#14532d; border:2px solid #22c55e"></div>
-                <span>Product</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-swatch" style="background:#422006; border:2px dotted #d97706"></div>
-                <span>Test/CI</span>
-            </div>
-            <div class="legend-title" style="margin-top:4px">Edges</div>
-            <div class="legend-item">
-                <div class="legend-line" style="background:#4b5563"></div>
-                <span>builds_from</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-line" style="background:#4b5563; background: repeating-linear-gradient(90deg,#4b5563 0,#4b5563 6px,transparent 6px,transparent 9px)"></div>
-                <span>produces</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-line" style="background: repeating-linear-gradient(90deg,#4b5563 0,#4b5563 2px,transparent 2px,transparent 5px)"></div>
-                <span>consumes</span>
-            </div>
+        <div class="staleness-pills" role="list" aria-label="Staleness counts">
+            {% if staleness_counts.current > 0 %}
+            <span class="staleness-pill current" role="listitem" aria-label="{{ staleness_counts.current }} current images">
+                <span class="staleness-pill-dot" aria-hidden="true"></span>
+                {{ staleness_counts.current }} current
+            </span>
+            {% endif %}
+            {% if staleness_counts.behind > 0 %}
+            <span class="staleness-pill behind" role="listitem" aria-label="{{ staleness_counts.behind }} images behind">
+                <span class="staleness-pill-dot" aria-hidden="true"></span>
+                {{ staleness_counts.behind }} behind
+            </span>
+            {% endif %}
+            {% if staleness_counts.major_behind > 0 %}
+            <span class="staleness-pill major" role="listitem" aria-label="{{ staleness_counts.major_behind }} images major version behind">
+                <span class="staleness-pill-dot" aria-hidden="true"></span>
+                {{ staleness_counts.major_behind }} major behind
+            </span>
+            {% endif %}
+            {% if staleness_counts.unknown > 0 %}
+            <span class="staleness-pill unknown" role="listitem" aria-label="{{ staleness_counts.unknown }} images with unknown staleness">
+                <span class="staleness-pill-dot" aria-hidden="true"></span>
+                {{ staleness_counts.unknown }} unknown
+            </span>
+            {% endif %}
         </div>
-    </main>
+    </section>
+    {% endif %}
+
+    <!-- ── Workspace ─────────────────────────────────────────────────────── -->
+    <div class="workspace">
+
+        <!-- ── Sidebar ──────────────────────────────────────────────────── -->
+        <aside id="sidebar" aria-label="Filters">
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Filters</div>
+                <div class="filter-group">
+                    <label class="filter-label" for="filter-classification">Classification</label>
+                    <select id="filter-classification" class="filter-select" aria-label="Filter by classification">
+                        <option value="">All classifications</option>
+                        {% for cls in classifications %}
+                        <option value="{{ cls }}">{{ cls | capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="filter-group">
+                    <label class="filter-label" for="filter-registry">Registry</label>
+                    <select id="filter-registry" class="filter-select" aria-label="Filter by registry">
+                        <option value="">All registries</option>
+                        {% for reg in registries %}
+                        <option value="{{ reg }}">{{ reg }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="filter-group">
+                    <label class="filter-label" for="filter-staleness">Staleness</label>
+                    <select id="filter-staleness" class="filter-select" aria-label="Filter by staleness status">
+                        <option value="">All staleness</option>
+                        <option value="current">Current</option>
+                        <option value="behind">Behind</option>
+                        <option value="major_behind">Major behind</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+                </div>
+            </div>
+
+            {% if source_tree %}
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Sources</div>
+                <div id="source-filters" style="display:flex;flex-direction:column;gap:2px;max-height:240px;overflow-y:auto;">
+                    {% for file_type, files in source_tree.items() %}
+                    <div class="source-tree-group" data-file-type="{{ file_type }}">
+                        <div class="source-tree-header">
+                            <span class="source-tree-caret">&#9654;</span>
+                            <input type="checkbox" class="source-type-cb" data-file-type="{{ file_type }}" checked>
+                            <span class="source-dot source-dot-{{ file_type | lower | replace(' ', '-') }}"></span>
+                            <span>{{ file_type }}</span>
+                            <span class="source-tree-count">{{ files | length }}</span>
+                        </div>
+                        <div class="source-tree-children">
+                            {% for sf in files %}
+                            <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text);cursor:pointer;line-height:1.3;" title="{{ sf.key }}">
+                                <input type="checkbox" class="source-file-cb" value="{{ sf.key }}" data-file-type="{{ file_type }}" checked>
+                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ sf.key }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Display</div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer;">
+                    <input type="checkbox" id="toggle-edge-labels" aria-label="Toggle edge labels">
+                    Show edge labels
+                </label>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Legend</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <div class="legend-title" style="margin-top:0">Nodes</div>
+                    <div class="legend-item">
+                        <div class="legend-swatch" style="background:var(--badge-base);border:1px solid var(--card-border)"></div>
+                        <span>Base</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch" style="background:var(--badge-application);border:1px solid rgba(59,130,246,0.4)"></div>
+                        <span>Application</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch" style="background:var(--badge-middleware);border:1px solid rgba(139,92,246,0.4)"></div>
+                        <span>Middleware</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch" style="background:var(--badge-utility);border:1px solid rgba(34,197,94,0.4)"></div>
+                        <span>Utility / Product</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch" style="background:var(--badge-external);border:1px dashed rgba(249,115,22,0.5)"></div>
+                        <span>External</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-swatch" style="background:var(--badge-test);border:1px dashed rgba(251,146,60,0.4)"></div>
+                        <span>Test</span>
+                    </div>
+                    <div class="legend-title" style="margin-top:6px">Edges</div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background:#3b82f6"></div>
+                        <span>builds_from</span>
+                    </div>
+                    <div class="legend-desc">Base image dependency (FROM)</div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: repeating-linear-gradient(90deg,#22c55e 0,#22c55e 6px,transparent 6px,transparent 9px)"></div>
+                        <span>produces</span>
+                    </div>
+                    <div class="legend-desc">Build outputs this image</div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: repeating-linear-gradient(90deg,#f97316 0,#f97316 2px,transparent 2px,transparent 6px)"></div>
+                        <span>requires</span>
+                    </div>
+                    <div class="legend-desc">Runtime dependency</div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: repeating-linear-gradient(90deg,#8b5cf6 0,#8b5cf6 4px,transparent 4px,transparent 6px)"></div>
+                        <span>variant_of</span>
+                    </div>
+                    <div class="legend-desc">Variant (e.g. -slim, -alpine)</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── Graph canvas ──────────────────────────────────────────────── -->
+        <main id="graph-area" role="main" aria-label="Dependency graph">
+            <svg id="graph-svg" role="img" aria-label="Docker image dependency graph">
+                <defs>
+                    <marker id="arrow-builds_from" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" opacity="0.7"/>
+                    </marker>
+                    <marker id="arrow-produces" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e" opacity="0.7"/>
+                    </marker>
+                    <marker id="arrow-consumes" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#f97316" opacity="0.7"/>
+                    </marker>
+                    <marker id="arrow-variant_of" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#8b5cf6" opacity="0.7"/>
+                    </marker>
+                    <marker id="arrow-alias_of" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280" opacity="0.7"/>
+                    </marker>
+                </defs>
+                <g id="graph-container"></g>
+            </svg>
+
+            <div id="empty-state" class="hidden" role="status" aria-live="polite">
+                <span class="empty-icon" aria-hidden="true">&#128269;</span>
+                <span class="empty-text">No nodes match the current filters</span>
+            </div>
+
+            <div id="filter-info" class="hidden" role="status" aria-live="polite"></div>
+        </main>
+    </div>
 
     <!-- Tooltip -->
-    <div id="tooltip" class="tooltip hidden">
+    <div id="tooltip" class="hidden" role="tooltip" aria-hidden="true">
         <div class="tooltip-title"></div>
         <div class="tooltip-body"></div>
     </div>
@@ -558,10 +1257,15 @@
     <!-- Embedded graph data -->
     <script>
         const GRAPH_DATA = {{ graph_data_json | safe }};
+        const STALENESS_COUNTS = {{ staleness_counts_json | safe }};
+        const CLASSIFICATIONS = {{ classifications_json | safe }};
+        const REGISTRIES = {{ registries_json | safe }};
+        const SOURCE_FILES = {{ source_files_json | safe }};
+        const SOURCE_TREE = {{ source_tree_json | safe }};
     </script>
 
-    <!-- CDN libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+    <!-- CDN libraries — dagre-d3 0.6.4 requires d3 v5 -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@5/dist/d3.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dagre-d3@0.6.4/dist/dagre-d3.min.js"></script>
 
     <script>
@@ -569,6 +1273,7 @@
         "use strict";
 
         // ── Helpers ──────────────────────────────────────────────────────────
+
         function escapeHtml(str) {
             if (str == null) return "";
             return String(str)
@@ -578,102 +1283,139 @@
                 .replace(/"/g, "&quot;");
         }
 
-        /** Map a criticality score [0,10] → heat colour. */
-        function criticalityToColor(score) {
-            if (score <= 0)  return null;
-            if (score < 2.5) return "#16a34a"; // green
-            if (score < 5.0) return "#ca8a04"; // yellow
-            if (score < 7.5) return "#ea580c"; // orange
-            return "#dc2626";                  // red
+        function stalenessBadgeClass(s) {
+            if (!s) return "unknown";
+            if (s === "current")      return "current";
+            if (s === "behind")       return "behind";
+            if (s === "major_behind") return "major_behind";
+            return "unknown";
         }
 
-        /** Build an adjacency representation from GRAPH_DATA.edges. */
+        function stalenessBadgeLabel(s) {
+            if (!s) return "unknown";
+            if (s === "current")      return "current";
+            if (s === "behind")       return "behind";
+            if (s === "major_behind") return "major behind";
+            return s;
+        }
+
+        function extractRegistry(canonical) {
+            if (!canonical) return "";
+            var slash = canonical.indexOf("/");
+            if (slash < 0) return "";
+            var first = canonical.substring(0, slash);
+            return (first.includes(".") || first.includes(":")) ? first : "";
+        }
+
+        function sourceDotClass(fileType) {
+            return "source-dot source-dot-" + (fileType || "other").toLowerCase().replace(/ /g, "-");
+        }
+
+        // ── State ────────────────────────────────────────────────────────────
+
+        var nodeMap = {};
+        GRAPH_DATA.nodes.forEach(function (n) { nodeMap[n.id] = n; });
+
+        var selectedNode = null;
+        var allSourceKeys = SOURCE_FILES.map(function (sf) { return sf.key; });
+        var activeFilters = {
+            search: "",
+            classification: "",
+            registry: "",
+            staleness: "",
+            sourceFiles: new Set(allSourceKeys),
+        };
+
+        // ── Adjacency ────────────────────────────────────────────────────────
+
         function buildAdjacency() {
-            const downstream = {}; // node → set of nodes it points to
-            const upstream   = {}; // node → set of nodes pointing to it
-            GRAPH_DATA.nodes.forEach(n => { downstream[n.id] = new Set(); upstream[n.id] = new Set(); });
-            GRAPH_DATA.edges.forEach(e => {
+            var downstream = {};
+            var upstream   = {};
+            GRAPH_DATA.nodes.forEach(function (n) {
+                downstream[n.id] = new Set();
+                upstream[n.id]   = new Set();
+            });
+            GRAPH_DATA.edges.forEach(function (e) {
                 if (downstream[e.source]) downstream[e.source].add(e.target);
                 if (upstream[e.target])   upstream[e.target].add(e.source);
             });
-            return { downstream, upstream };
+            return { downstream: downstream, upstream: upstream };
         }
 
-        /** BFS: collect all reachable nodes from `start` following `adjMap`. */
         function bfs(start, adjMap) {
-            const visited = new Set();
-            const queue = [start];
+            var visited = new Set();
+            var queue   = [start];
             while (queue.length) {
-                const cur = queue.shift();
+                var cur = queue.shift();
                 if (visited.has(cur)) continue;
                 visited.add(cur);
-                (adjMap[cur] || new Set()).forEach(n => queue.push(n));
+                (adjMap[cur] || new Set()).forEach(function (n) { queue.push(n); });
             }
             return visited;
         }
 
-        // ── State ────────────────────────────────────────────────────────────
-        const nodeMap = {};
-        GRAPH_DATA.nodes.forEach(n => { nodeMap[n.id] = n; });
+        var adj = buildAdjacency();
 
-        const adj = buildAdjacency();
+        // ── Compute visible set ──────────────────────────────────────────────
 
-        let selectedNode = null;
-        let activeFilters = {
-            search: "",
-            showBase: true,
-            showTest: true,
-        };
-
-        // ── Build visible node/edge sets given current filters ───────────────
         function computeVisible() {
-            const visibleIds = new Set();
+            var visibleIds = new Set();
 
-            GRAPH_DATA.nodes.forEach(n => {
-                const cls = n.classification || "base";
+            GRAPH_DATA.nodes.forEach(function (n) {
+                var cls = n.classification || "unknown";
+                var reg = extractRegistry(n.canonical);
+                var stn = n.staleness || "unknown";
 
-                // classification toggles
-                if (!activeFilters.showBase && cls === "base") return;
-                if (!activeFilters.showTest && cls === "test") return;
+                if (activeFilters.classification && cls !== activeFilters.classification) return;
+                if (activeFilters.registry && reg !== activeFilters.registry) return;
+                if (activeFilters.staleness && stn !== activeFilters.staleness) return;
 
-                // search filter: match against canonical name or label
-                const q = activeFilters.search.toLowerCase();
-                if (q && !n.canonical.toLowerCase().includes(q) && !n.label.toLowerCase().includes(q)) return;
+                // Source file filter: node must have at least one source from a checked file
+                // (nodes with no sources pass through — e.g. external images)
+                if (activeFilters.sourceFiles.size < allSourceKeys.length && n.sources && n.sources.length > 0) {
+                    var hasChecked = n.sources.some(function (s) { return activeFilters.sourceFiles.has(s.repo + "/" + s.file); });
+                    if (!hasChecked) return;
+                }
+
+                var q = activeFilters.search.toLowerCase();
+                if (q && !n.canonical.toLowerCase().includes(q) && !(n.label || "").toLowerCase().includes(q)) return;
 
                 visibleIds.add(n.id);
             });
 
-            const visibleEdges = GRAPH_DATA.edges.filter(
-                e => visibleIds.has(e.source) && visibleIds.has(e.target)
-            );
+            var visibleEdges = GRAPH_DATA.edges.filter(function (e) {
+                return visibleIds.has(e.source) && visibleIds.has(e.target);
+            });
 
-            return { visibleIds, visibleEdges };
+            return { visibleIds: visibleIds, visibleEdges: visibleEdges };
         }
 
         // ── Render ───────────────────────────────────────────────────────────
-        const svgEl  = document.getElementById("graph-svg");
-        const svg    = d3.select(svgEl);
-        const inner  = d3.select("#graph-container");
-        const tooltip = document.getElementById("tooltip");
-        const emptyState  = document.getElementById("empty-state");
-        const filterInfo  = document.getElementById("filter-info");
 
-        const zoom = d3.zoom()
-            .scaleExtent([0.1, 4])
-            .on("zoom", e => inner.attr("transform", e.transform));
+        var svgEl      = document.getElementById("graph-svg");
+        var svg        = d3.select(svgEl);
+        var inner      = d3.select("#graph-container");
+        var tooltip    = document.getElementById("tooltip");
+        var emptyState = document.getElementById("empty-state");
+        var filterInfo = document.getElementById("filter-info");
+
+        // d3 v5: zoom event is on d3.event, not the callback parameter
+        var zoom = d3.zoom()
+            .scaleExtent([0.05, 4])
+            .on("zoom", function () { inner.attr("transform", d3.event.transform); });
 
         svg.call(zoom);
 
-        let currentTransform = d3.zoomIdentity;
-
         function render() {
-            // Clear previous graph
             inner.selectAll("*").remove();
+            // Force synchronous reflow so dagre-d3 measures fresh DOM
+            inner.node().getBoundingClientRect();
             selectedNode = null;
 
-            const { visibleIds, visibleEdges } = computeVisible();
+            var result = computeVisible();
+            var visibleIds   = result.visibleIds;
+            var visibleEdges = result.visibleEdges;
 
-            // Empty state
             if (visibleIds.size === 0) {
                 emptyState.classList.remove("hidden");
                 filterInfo.classList.add("hidden");
@@ -681,81 +1423,130 @@
             }
             emptyState.classList.add("hidden");
 
-            // Filter info badge
-            const totalNodes = GRAPH_DATA.nodes.length;
+            var totalNodes = GRAPH_DATA.nodes.length;
             if (visibleIds.size < totalNodes) {
-                filterInfo.textContent = `Showing ${visibleIds.size} of ${totalNodes} images`;
+                filterInfo.textContent = "Showing " + visibleIds.size + " of " + totalNodes + " images";
                 filterInfo.classList.remove("hidden");
             } else {
                 filterInfo.classList.add("hidden");
             }
 
             // ── Build dagre graph ─────────────────────────────────────────
-            const g = new dagreD3.graphlib.Graph({ compound: false })
-                .setGraph({ rankdir: "LR", marginx: 40, marginy: 40, ranksep: 80, nodesep: 30 });
-            g.setDefaultEdgeLabel(() => ({}));
+            var g = new dagreD3.graphlib.Graph({ compound: false })
+                .setGraph({ rankdir: "LR", marginx: 40, marginy: 40, ranksep: 80, nodesep: 24 });
+            g.setDefaultEdgeLabel(function () { return {}; });
 
-            visibleIds.forEach(nid => {
-                const node = nodeMap[nid];
-                const cls  = node.classification || "base";
-                const critColor = criticalityToColor(node.criticality);
+            visibleIds.forEach(function (nid) {
+                var node = nodeMap[nid];
+                var cls  = node.classification || "unknown";
 
-                const tagsHtml = (node.tags || []).slice(0, 3)
-                    .map(t => `<span class="tag">${escapeHtml(t)}</span>`)
+                var allTags = node.tags || [];
+                var tagsHtml = allTags.slice(0, 4)
+                    .map(function (t) { return '<span class="node-tag">' + escapeHtml(t) + '</span>'; })
                     .join("");
+                if (allTags.length > 4) {
+                    tagsHtml += '<span class="node-tag node-tag-overflow">+' + (allTags.length - 4) + '</span>';
+                }
 
-                const critHtml = (critColor && node.criticality > 0)
-                    ? `<div class="crit-badge" style="background:${critColor}">${node.criticality.toFixed(1)}</div>`
-                    : "";
+                var staleClass = stalenessBadgeClass(node.staleness);
+                var staleLabel = stalenessBadgeLabel(node.staleness);
+                var staleHtml  = '<span class="node-staleness-badge ' + escapeHtml(staleClass) + '"><span class="staleness-dot"></span>' + escapeHtml(staleLabel) + '</span>';
 
-                const labelHtml = `<div class="node-inner ${escapeHtml(cls)}">
-                    <div class="node-title">${escapeHtml(node.label)}</div>
-                    ${tagsHtml ? `<div class="node-tags">${tagsHtml}</div>` : ""}
-                    ${critHtml}
-                </div>`;
+                var labelHtml =
+                    '<div class="node-inner">' +
+                    '<div class="node-header">' +
+                    '<span class="node-title">' + escapeHtml(node.label || node.canonical) + '</span>' +
+                    '<span class="node-cls-badge node-cls-' + escapeHtml(cls) + '">' + escapeHtml(cls) + '</span>' +
+                    '</div>' +
+                    (tagsHtml ? '<div class="node-tags">' + tagsHtml + '</div>' : "") +
+                    staleHtml +
+                    '</div>';
+
+                var diffClass = "";
+                if (node.diff === "added")   diffClass = " node-diff-added";
+                if (node.diff === "removed") diffClass = " node-diff-removed";
+                if (node.diff === "changed") diffClass = " node-diff-changed";
 
                 g.setNode(nid, {
                     labelType: "html",
                     label: labelHtml,
-                    class: `node-${cls}`,
-                    rx: 6,
-                    ry: 6,
+                    class: "node-" + cls + diffClass,
+                    rx: 8,
+                    ry: 8,
                     padding: 0,
                 });
             });
 
-            visibleEdges.forEach(edge => {
-                g.setEdge(edge.source, edge.target, {
-                    class: `edge-${edge.relationship}`,
+            visibleEdges.forEach(function (edge) {
+                var src   = edge.source;
+                var tgt   = edge.target;
+                var label = edge.relationship.replace(/_/g, " ");
+
+                // Reverse builds_from so arrows flow base → child (left-to-right)
+                if (edge.relationship === "builds_from") {
+                    src   = edge.target;
+                    tgt   = edge.source;
+                    label = "base of";
+                }
+
+                // Reverse consumes so required images sit left of consumers
+                if (edge.relationship === "consumes") {
+                    src   = edge.target;
+                    tgt   = edge.source;
+                    label = "requires";
+                }
+
+                g.setEdge(src, tgt, {
+                    class: "edge-" + edge.relationship,
                     arrowhead: "vee",
                     curve: d3.curveBasis,
+                    label: label,
+                    style: "font-size:9px;fill:none",
+                    labelStyle: "font-size:9px;fill:var(--text-muted);font-family:var(--font)",
                 });
             });
 
-            // ── Render with dagre-d3 ──────────────────────────────────────
-            const renderFn = new dagreD3.render();
+            var renderFn = new dagreD3.render();
             renderFn(inner, g);
 
-            // ── Fit graph to viewport on first render ─────────────────────
-            const svgWidth  = svgEl.clientWidth  || 800;
-            const svgHeight = svgEl.clientHeight || 600;
-            const graphWidth  = g.graph().width  || 1;
-            const graphHeight = g.graph().height || 1;
+            // ── Fix dagre-d3 foreignObject sizing (measurement bug) ─────
+            inner.selectAll("g.node foreignObject").each(function () {
+                var fo  = d3.select(this);
+                var div = fo.select("div").node();
+                if (!div) return;
+                var w = div.scrollWidth;
+                var h = div.scrollHeight;
+                if (w > 0 && h > 0) {
+                    fo.attr("width",  Math.ceil(w));
+                    fo.attr("height", Math.ceil(h));
+                }
+            });
 
-            const scale = Math.min(
+            // ── Apply stagger animation ────────────────────────────────────
+            inner.selectAll("g.node").each(function (_, i) {
+                this.style.animationDelay = (i * 30) + "ms";
+            });
+
+            // ── Fit to viewport ────────────────────────────────────────────
+            var svgWidth    = svgEl.clientWidth  || 800;
+            var svgHeight   = svgEl.clientHeight || 600;
+            var graphWidth  = g.graph().width    || 1;
+            var graphHeight = g.graph().height   || 1;
+
+            var scale = Math.min(
                 0.95,
                 svgWidth  / (graphWidth  + 80),
                 svgHeight / (graphHeight + 80)
             );
-            const tx = (svgWidth  - graphWidth  * scale) / 2;
-            const ty = (svgHeight - graphHeight * scale) / 2;
+            var tx = (svgWidth  - graphWidth  * scale) / 2;
+            var ty = (svgHeight - graphHeight * scale) / 2;
 
-            const initialTransform = d3.zoomIdentity.translate(tx, ty).scale(scale);
-            svg.call(zoom.transform, initialTransform);
+            svg.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
 
-            // ── Event: click to highlight path ────────────────────────────
-            inner.selectAll("g.node").on("click", function (event, nodeId) {
-                event.stopPropagation();
+            // ── Click to highlight ─────────────────────────────────────────
+            // d3 v5: callback is (datum, index, nodes), event is d3.event
+            inner.selectAll("g.node").on("click", function (nodeId) {
+                d3.event.stopPropagation();
                 if (selectedNode === nodeId) {
                     clearHighlight();
                     selectedNode = null;
@@ -765,27 +1556,26 @@
                 }
             });
 
-            // Click on background → clear
-            svg.on("click", () => {
+            svg.on("click", function () {
                 clearHighlight();
                 selectedNode = null;
             });
 
-            // ── Event: hover tooltip ──────────────────────────────────────
+            // ── Hover tooltip ──────────────────────────────────────────────
             inner.selectAll("g.node")
-                .on("mouseover", function (event, nodeId) { showTooltip(event, nodeId); })
-                .on("mousemove", function (event)          { moveTooltip(event); })
-                .on("mouseout",  function ()               { hideTooltip(); });
+                .on("mouseover", function (nodeId) { showTooltip(d3.event, nodeId); })
+                .on("mousemove", function ()       { moveTooltip(d3.event); })
+                .on("mouseout",  function ()       { hideTooltip(); });
         }
 
         // ── Highlight ────────────────────────────────────────────────────────
+
         function clearHighlight() {
             inner.selectAll("g.node")
                 .classed("highlight-selected",   false)
                 .classed("highlight-upstream",   false)
                 .classed("highlight-downstream", false)
                 .classed("dimmed",               false);
-
             inner.selectAll("g.edgePath")
                 .classed("highlight-edge", false)
                 .classed("dimmed-edge",    false);
@@ -793,17 +1583,14 @@
 
         function highlightPath(nodeId) {
             clearHighlight();
-
-            const upstreamSet   = bfs(nodeId, adj.upstream);
-            const downstreamSet = bfs(nodeId, adj.downstream);
-            // Remove the selected node itself from upstream/downstream sets
+            var upstreamSet   = bfs(nodeId, adj.upstream);
+            var downstreamSet = bfs(nodeId, adj.downstream);
             upstreamSet.delete(nodeId);
             downstreamSet.delete(nodeId);
-
-            const relevant = new Set([nodeId, ...upstreamSet, ...downstreamSet]);
+            var relevant = new Set([nodeId].concat(Array.from(upstreamSet)).concat(Array.from(downstreamSet)));
 
             inner.selectAll("g.node").each(function (nid) {
-                const el = d3.select(this);
+                var el = d3.select(this);
                 if (nid === nodeId) {
                     el.classed("highlight-selected", true);
                 } else if (upstreamSet.has(nid)) {
@@ -816,10 +1603,9 @@
             });
 
             inner.selectAll("g.edgePath").each(function (edgeObj) {
-                const el = d3.select(this);
-                // edgeObj is a {v, w} object from dagre
-                const src = edgeObj.v;
-                const tgt = edgeObj.w;
+                var el = d3.select(this);
+                var src = edgeObj.v;
+                var tgt = edgeObj.w;
                 if (relevant.has(src) && relevant.has(tgt)) {
                     el.classed("highlight-edge", true);
                 } else {
@@ -829,129 +1615,252 @@
         }
 
         // ── Tooltip ──────────────────────────────────────────────────────────
+
         function showTooltip(event, nodeId) {
-            const node = nodeMap[nodeId];
+            var node = nodeMap[nodeId];
             if (!node) return;
 
-            const critColor = criticalityToColor(node.criticality);
-            const cls = node.classification || "base";
+            var cls       = node.classification || "unknown";
+            var staleClass = stalenessBadgeClass(node.staleness);
 
-            let body = "";
+            var body = "";
 
-            // Canonical
-            body += `<div class="tt-row">
-                <span class="tt-label">Canonical</span>
-                <span class="tt-value">${escapeHtml(node.canonical)}</span>
-            </div>`;
+            body += '<div class="tt-row">' +
+                '<span class="tt-label">Canonical</span>' +
+                '<span class="tt-value">' + escapeHtml(node.canonical) + '</span>' +
+            '</div>';
 
-            // Classification
-            body += `<div class="tt-row">
-                <span class="tt-label">Class</span>
-                <span class="tt-value">${escapeHtml(cls)}</span>
-            </div>`;
+            body += '<div class="tt-row">' +
+                '<span class="tt-label">Class</span>' +
+                '<span class="tt-value">' +
+                    '<span class="tt-badge node-cls-badge node-cls-' + escapeHtml(cls) + '">' + escapeHtml(cls) + '</span>' +
+                '</span>' +
+            '</div>';
 
-            // Staleness
             if (node.staleness) {
-                body += `<div class="tt-row">
-                    <span class="tt-label">Staleness</span>
-                    <span class="tt-value">${escapeHtml(node.staleness)}</span>
-                </div>`;
+                body += '<div class="tt-row">' +
+                    '<span class="tt-label">Staleness</span>' +
+                    '<span class="tt-value">' +
+                        '<span class="node-staleness-badge ' + escapeHtml(staleClass) + '">' + escapeHtml(stalenessBadgeLabel(node.staleness)) + '</span>' +
+                    '</span>' +
+                '</div>';
             }
 
-            // Criticality
-            if (node.criticality > 0 && critColor) {
-                body += `<div class="tt-row">
-                    <span class="tt-label">Criticality</span>
-                    <span class="tt-value">
-                        <span class="tt-badge" style="background:${critColor}">${node.criticality.toFixed(2)}</span>
-                    </span>
-                </div>`;
+            if (node.criticality > 0) {
+                body += '<div class="tt-row">' +
+                    '<span class="tt-label">Criticality</span>' +
+                    '<span class="tt-value">' + node.criticality.toFixed(2) + '</span>' +
+                '</div>';
             }
 
-            // Tags
             if (node.tags && node.tags.length > 0) {
-                const tagsHtml = node.tags.map(t => `<span class="tt-tag">${escapeHtml(t)}</span>`).join(" ");
-                body += `<div class="tt-row">
-                    <span class="tt-label">Tags</span>
-                    <span class="tt-value">${tagsHtml}</span>
-                </div>`;
+                var tagsHtml = node.tags.map(function (t) { return '<span class="tt-tag">' + escapeHtml(t) + '</span>'; }).join("");
+                body += '<div class="tt-row">' +
+                    '<span class="tt-label">Tags</span>' +
+                    '<span class="tt-value">' + tagsHtml + '</span>' +
+                '</div>';
             }
 
-            // Sources (up to 3)
             if (node.sources && node.sources.length > 0) {
-                const shown = node.sources.slice(0, 3);
-                const srcHtml = shown.map(s =>
-                    `<div class="tt-source">${escapeHtml(s.repo)} · ${escapeHtml(s.file)}:${s.line}</div>`
-                ).join("");
-                body += `<div class="tt-row">
-                    <span class="tt-label">Sources</span>
-                    <span class="tt-value" style="flex:1">${srcHtml}</span>
-                </div>`;
+                var shown = node.sources.slice(0, 3);
+                var srcHtml = shown.map(function (s) {
+                    return '<div class="tt-source"><span class="' + sourceDotClass(s.file_type) + '" style="width:6px;height:6px;vertical-align:middle;margin-right:4px;"></span>' + escapeHtml(s.repo) + ' &middot; ' + escapeHtml(s.file) + ':' + s.line + '</div>';
+                }).join("");
+                body += '<div class="tt-row">' +
+                    '<span class="tt-label">Sources</span>' +
+                    '<span class="tt-value" style="flex:1">' + srcHtml + '</span>' +
+                '</div>';
                 if (node.sources.length > 3) {
-                    body += `<div class="tt-row">
-                        <span class="tt-label"></span>
-                        <span class="tt-value" style="color:var(--text-muted)">+${node.sources.length - 3} more</span>
-                    </div>`;
+                    body += '<div class="tt-row">' +
+                        '<span class="tt-label"></span>' +
+                        '<span class="tt-value" style="color:var(--text-muted)">+' + (node.sources.length - 3) + ' more</span>' +
+                    '</div>';
                 }
             }
 
-            document.querySelector(".tooltip-title").innerHTML = escapeHtml(node.canonical);
+            document.querySelector(".tooltip-title").textContent = node.canonical;
             document.querySelector(".tooltip-body").innerHTML = body;
 
-            moveTooltip(event);
             tooltip.classList.remove("hidden");
+            tooltip.setAttribute("aria-hidden", "false");
+            moveTooltip(event);
+            requestAnimationFrame(function () { tooltip.classList.add("visible"); });
         }
 
         function moveTooltip(event) {
-            const pad = 16;
-            const tw = tooltip.offsetWidth  || 280;
-            const th = tooltip.offsetHeight || 160;
-            const vw = window.innerWidth;
-            const vh = window.innerHeight;
+            var pad = 16;
+            var tw  = tooltip.offsetWidth  || 280;
+            var th  = tooltip.offsetHeight || 160;
+            var vw  = window.innerWidth;
+            var vh  = window.innerHeight;
 
-            let x = event.clientX + pad;
-            let y = event.clientY + pad;
+            var x = event.clientX + pad;
+            var y = event.clientY + pad;
 
             if (x + tw > vw - pad) x = event.clientX - tw - pad;
             if (y + th > vh - pad) y = event.clientY - th - pad;
 
-            tooltip.style.left = `${x}px`;
-            tooltip.style.top  = `${y}px`;
+            tooltip.style.left = x + "px";
+            tooltip.style.top  = y + "px";
         }
 
         function hideTooltip() {
-            tooltip.classList.add("hidden");
+            tooltip.classList.remove("visible");
+            tooltip.setAttribute("aria-hidden", "true");
+            setTimeout(function () {
+                if (!tooltip.classList.contains("visible")) {
+                    tooltip.classList.add("hidden");
+                }
+            }, 130);
         }
 
         // ── Controls ─────────────────────────────────────────────────────────
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "/" && document.activeElement !== document.getElementById("search")) {
+                e.preventDefault();
+                document.getElementById("search").focus();
+            }
+            if (e.key === "Escape") {
+                var s = document.getElementById("search");
+                if (document.activeElement === s) {
+                    s.value = "";
+                    activeFilters.search = "";
+                    render();
+                    s.blur();
+                }
+            }
+        });
+
         document.getElementById("search").addEventListener("input", function () {
             activeFilters.search = this.value.trim();
             render();
         });
 
-        document.getElementById("toggle-base").addEventListener("change", function () {
-            activeFilters.showBase = this.checked;
+        document.getElementById("filter-classification").addEventListener("change", function () {
+            activeFilters.classification = this.value;
             render();
         });
 
-        document.getElementById("toggle-test").addEventListener("change", function () {
-            activeFilters.showTest = this.checked;
+        document.getElementById("filter-registry").addEventListener("change", function () {
+            activeFilters.registry = this.value;
             render();
         });
 
-        document.getElementById("reset-zoom").addEventListener("click", () => {
-            // Re-render which auto-fits
+        document.getElementById("filter-staleness").addEventListener("change", function () {
+            activeFilters.staleness = this.value;
+            // Sync pill active state
+            document.querySelectorAll(".staleness-pill").forEach(function (p) { p.classList.remove("active"); });
+            if (this.value) {
+                var pillClass = this.value === "major_behind" ? "major" : this.value;
+                var activePill = document.querySelector(".staleness-pill." + pillClass);
+                if (activePill) activePill.classList.add("active");
+            }
+            render();
+        });
+
+        // ── Staleness pill click-to-filter ──────────────────────────────────
+        document.querySelectorAll(".staleness-pill").forEach(function (pill) {
+            pill.addEventListener("click", function () {
+                var pillClasses = this.className.split(/\s+/);
+                var value = "";
+                if (pillClasses.indexOf("current") >= 0) value = "current";
+                else if (pillClasses.indexOf("behind") >= 0) value = "behind";
+                else if (pillClasses.indexOf("major") >= 0) value = "major_behind";
+                else if (pillClasses.indexOf("unknown") >= 0) value = "unknown";
+
+                // Toggle: if already active, clear filter
+                if (this.classList.contains("active")) {
+                    activeFilters.staleness = "";
+                    document.getElementById("filter-staleness").value = "";
+                    this.classList.remove("active");
+                } else {
+                    activeFilters.staleness = value;
+                    document.getElementById("filter-staleness").value = value;
+                    document.querySelectorAll(".staleness-pill").forEach(function (p) { p.classList.remove("active"); });
+                    this.classList.add("active");
+                }
+                render();
+            });
+        });
+
+        // ── Source tree: expand/collapse ─────────────────────────────────────
+        document.querySelectorAll(".source-tree-header").forEach(function (hdr) {
+            hdr.addEventListener("click", function (e) {
+                if (e.target.tagName === "INPUT") return; // let checkbox handle itself
+                this.parentElement.classList.toggle("collapsed");
+            });
+        });
+
+        // ── Source tree: parent checkbox toggle ──────────────────────────────
+        function syncParentCheckbox(fileType) {
+            var parent = document.querySelector('.source-type-cb[data-file-type="' + fileType + '"]');
+            if (!parent) return;
+            var children = document.querySelectorAll('.source-file-cb[data-file-type="' + fileType + '"]');
+            var total = children.length;
+            var checked = 0;
+            children.forEach(function (c) { if (c.checked) checked++; });
+            parent.checked = checked === total;
+            parent.indeterminate = checked > 0 && checked < total;
+        }
+
+        document.querySelectorAll(".source-type-cb").forEach(function (cb) {
+            cb.addEventListener("change", function () {
+                var fileType = this.getAttribute("data-file-type");
+                var children = document.querySelectorAll('.source-file-cb[data-file-type="' + fileType + '"]');
+                var checked = this.checked;
+                children.forEach(function (c) {
+                    c.checked = checked;
+                    if (checked) {
+                        activeFilters.sourceFiles.add(c.value);
+                    } else {
+                        activeFilters.sourceFiles.delete(c.value);
+                    }
+                });
+                render();
+            });
+        });
+
+        document.querySelectorAll(".source-file-cb").forEach(function (cb) {
+            cb.addEventListener("change", function () {
+                if (this.checked) {
+                    activeFilters.sourceFiles.add(this.value);
+                } else {
+                    activeFilters.sourceFiles.delete(this.value);
+                }
+                syncParentCheckbox(this.getAttribute("data-file-type"));
+                render();
+            });
+        });
+
+        document.getElementById("reset-zoom").addEventListener("click", function () {
             render();
         });
 
         document.getElementById("theme-toggle").addEventListener("click", function () {
-            const root = document.documentElement;
-            const isDark = root.getAttribute("data-theme") === "dark";
+            var root  = document.documentElement;
+            var isDark = root.getAttribute("data-theme") === "dark";
             root.setAttribute("data-theme", isDark ? "light" : "dark");
-            this.textContent = isDark ? "🌙 Dark" : "☀️ Light";
+            this.textContent = isDark ? "Dark" : "Light";
         });
 
-        // ── Initial render ────────────────────────────────────────────────────
+        var sidebar       = document.getElementById("sidebar");
+        var sidebarToggle = document.getElementById("sidebar-toggle");
+        sidebarToggle.addEventListener("click", function () {
+            var collapsed = sidebar.classList.toggle("collapsed");
+            this.setAttribute("aria-expanded", String(!collapsed));
+        });
+
+        // ── Edge label toggle ────────────────────────────────────────────────
+        var edgeLabelCheckbox = document.getElementById("toggle-edge-labels");
+        var graphContainer    = document.getElementById("graph-container");
+        edgeLabelCheckbox.addEventListener("change", function () {
+            graphContainer.classList.toggle("hide-edge-labels", !this.checked);
+        });
+        // Hidden by default (checkbox unchecked)
+        graphContainer.classList.add("hide-edge-labels");
+
+        // ── Initial render ───────────────────────────────────────────────────
         render();
     })();
     </script>

@@ -1,0 +1,15 @@
+# Minimal GitHub Actions workflow with a single container image
+
+name: Simple
+
+on: [push]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.12-slim
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run script
+        run: echo "hello"

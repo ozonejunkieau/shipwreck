@@ -1,0 +1,32 @@
+# GitHub Actions workflow focused on docker build/push with env vars and secrets
+
+name: Build and Push
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BASE: myorg/myapp
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}:latest .
+
+      - name: Push production image
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_BASE }}:latest
+
+      - name: Build with secret registry
+        run: |
+          docker build -t ${{ secrets.PRIVATE_REGISTRY }}/myapp:${{ github.sha }} .
+          docker push ${{ secrets.PRIVATE_REGISTRY }}/myapp:${{ github.sha }}
+
+      - name: Pull base image
+        run: docker pull ubuntu:22.04
