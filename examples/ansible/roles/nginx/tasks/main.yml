@@ -1,0 +1,24 @@
+---
+# Nginx role — uses variables from defaults/main.yml.
+# Shipwreck resolves {{ nginx_image }}:{{ nginx_version }} to
+# registry.example.com/infra/nginx:1.27.3 (MEDIUM confidence).
+
+- name: Deploy custom nginx
+  community.docker.docker_container:
+    name: nginx-custom
+    image: "{{ nginx_image }}:{{ nginx_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+- name: Deploy nginx prometheus exporter
+  community.docker.docker_container:
+    name: nginx-exporter
+    image: "{{ nginx_exporter_image }}:{{ nginx_exporter_version }}"
+    state: started
+    restart_policy: unless-stopped
+    env:
+      NGINX_SCRAPE_URI: http://nginx-custom:8080/stub_status

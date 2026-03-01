@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
 import httpx
 
 from shipwreck.config import RepositoryConfig
+
+logger = logging.getLogger(__name__)
 
 
 def discover_repos(
@@ -47,10 +50,12 @@ def discover_repos(
 
     repos: list[RepositoryConfig] = []
 
+    logger.info("GitLab API discovery: GET %s (group=%s, subgroups=%s)", endpoint, group, include_subgroups)
     with httpx.Client(timeout=30.0) as client:
         page = 1
         while True:
             params["page"] = page
+            logger.info("GitLab API request: GET %s (page %d)", endpoint, page)
             response = client.get(endpoint, params=params, headers=headers)
             response.raise_for_status()
 

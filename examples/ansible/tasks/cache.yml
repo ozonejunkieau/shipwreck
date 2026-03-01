@@ -1,0 +1,24 @@
+---
+# Cache layer — Redis with Sentinel for high availability.
+
+- name: Deploy Redis primary
+  community.docker.docker_container:
+    name: redis
+    image: redis:7.4-alpine
+    state: started
+    restart_policy: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+- name: Deploy Redis Sentinel
+  community.docker.docker_container:
+    name: redis-sentinel
+    image: bitnami/redis-sentinel:7.4.1
+    state: started
+    restart_policy: unless-stopped
+    env:
+      REDIS_MASTER_HOST: redis
+      REDIS_MASTER_PORT_NUMBER: "6379"

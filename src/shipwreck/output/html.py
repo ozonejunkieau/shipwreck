@@ -77,6 +77,8 @@ def export_html(graph: Graph, output_path: Path | None = None) -> str:
         source_tree_json=json.dumps(source_tree),
         total_images=len(graph.nodes),
         total_edges=len(graph.edges),
+        warnings=graph.warnings,
+        warnings_json=json.dumps(graph.warnings),
     )
 
     if output_path:

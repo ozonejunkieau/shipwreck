@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import subprocess
 import tempfile
@@ -13,108 +14,19 @@ import yaml
 from shipwreck.models import Confidence, ImageReference
 from shipwreck.parsers.base import parse_image_string
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from shipwreck.config import AnsibleConfig
-
-# Matches {{ var }} style Jinja2 expressions (single identifier, no dots/calls)
-_JINJA2_EXPR_RE = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 
 # Marker prefix written to stdout by the generated playbook
 _MARKER = "SHIPWRECK_RESOLVE"
 
-# Regex to extract SHIPWRECK_RESOLVE|idx|value from ansible-playbook stdout
-_MARKER_RE = re.compile(r"SHIPWRECK_RESOLVE\|(\d+)\|([^\s\"'}]+)")
-
-
-def _substitute_simple(value: str, variables: dict[str, str]) -> tuple[str, list[str]]:
-    """Substitute ``{{ var }}`` expressions in *value* using *variables*.
-
-    Only resolves simple single-identifier tokens.  Dotted access and Jinja2
-    filters are left in place and reported as unresolved.
-
-    Args:
-        value: The raw Jinja2 template string.
-        variables: Flat mapping of variable name to value.
-
-    Returns:
-        ``(result, unresolved)`` where *result* is the substituted string and
-        *unresolved* lists variable names that could not be resolved.
-    """
-    unresolved: list[str] = []
-
-    def _replacer(m: re.Match[str]) -> str:
-        var = m.group(1).strip()
-        if var in variables:
-            return variables[var]
-        if var not in unresolved:
-            unresolved.append(var)
-        return m.group(0)
-
-    result = _JINJA2_EXPR_RE.sub(_replacer, value)
-    return result, unresolved
-
-
-def resolve_ansible_simple(
-    refs: list[ImageReference],
-    variables: dict[str, str],
-) -> list[ImageReference]:
-    """Resolve ``{{ var }}`` Jinja2 references from a flat variable dict.
-
-    Performs simple single-token substitution only.  Complex expressions
-    (dotted access, filters, lookups) are left unmodified and reported as
-    unresolved.
-
-    A new ``ImageReference`` object is returned for every input ref — input
-    objects are never mutated.  Confidence is raised to ``MEDIUM`` when at
-    least one variable was resolved and no variables remain unresolved.
-
-    Args:
-        refs: List of image references to process.
-        variables: Flat mapping of Ansible variable names to values.
-
-    Returns:
-        New list of ``ImageReference`` objects with as many variables
-        substituted as possible.
-    """
-    result: list[ImageReference] = []
-
-    for ref in refs:
-        if not ref.unresolved_variables:
-            result.append(ref)
-            continue
-
-        resolved_raw, still_unresolved = _substitute_simple(ref.raw, variables)
-
-        if resolved_raw == ref.raw:
-            result.append(ref)
-            continue
-
-        registry, name, tag, parse_unresolved = parse_image_string(resolved_raw)
-
-        for v in parse_unresolved:
-            if v not in still_unresolved:
-                still_unresolved.append(v)
-
-        if still_unresolved:
-            confidence = ref.confidence
-        else:
-            confidence = Confidence.MEDIUM
-
-        result.append(
-            ImageReference(
-                raw=resolved_raw,
-                registry=registry,
-                name=name,
-                tag=tag,
-                source=ref.source,
-                relationship=ref.relationship,
-                confidence=confidence,
-                unresolved_variables=still_unresolved,
-                metadata=dict(ref.metadata),
-            )
-        )
-
-    return result
+# Regex to extract SHIPWRECK_RESOLVE|idx|value from ansible-playbook stdout.
+# The leading " ensures we only match inside JSON strings from successful task
+# output (e.g. "msg": "SHIPWRECK_RESOLVE|0|nginx:1.25") and NOT from error
+# context where ansible echoes the raw YAML line containing the marker.
+_MARKER_RE = re.compile(r"\"SHIPWRECK_RESOLVE\|(\d+)\|([^\s\"'}]+)")
 
 
 def _build_playbook(refs: list[ImageReference]) -> str:
@@ -135,12 +47,20 @@ def _build_playbook(refs: list[ImageReference]) -> str:
     for idx, ref in enumerate(refs):
         if not ref.unresolved_variables:
             continue
-        tasks.append(
-            {
-                "name": f"Resolve shipwreck ref {idx}",
-                "debug": {"msg": f"{_MARKER}|{idx}|{ref.raw}"},
-            }
-        )
+        task: dict = {
+            "name": f"Resolve shipwreck ref {idx}",
+            "debug": {"msg": f"{_MARKER}|{idx}|{ref.raw}"},
+            "ignore_errors": True,
+        }
+        # Pass through loop context so ansible-playbook iterates and
+        # emits one SHIPWRECK_RESOLVE line per loop item.
+        if "loop" in ref.metadata:
+            task["loop"] = ref.metadata["loop"]
+        if "loop_var" in ref.metadata:
+            task["loop_control"] = {"loop_var": ref.metadata["loop_var"]}
+        if "task_vars" in ref.metadata:
+            task["vars"] = ref.metadata["task_vars"]
+        tasks.append(task)
 
     if not tasks:
         return yaml.dump([{"hosts": "all", "gather_facts": False, "tasks": []}])
@@ -153,7 +73,7 @@ def _build_playbook(refs: list[ImageReference]) -> str:
     return yaml.dump([play])
 
 
-def _parse_playbook_output(stdout: str) -> dict[int, str]:
+def _parse_playbook_output(stdout: str) -> dict[int, list[str]]:
     """Extract resolved values from ``ansible-playbook`` stdout.
 
     Scans for ``SHIPWRECK_RESOLVE|<index>|<value>`` tokens anywhere in the
@@ -161,35 +81,63 @@ def _parse_playbook_output(stdout: str) -> dict[int, str]:
 
     The value is terminated by any of: whitespace, ``"``, ``'``, ``}``.
 
+    The same index may appear multiple times when a task uses ``loop:``,
+    producing one entry per loop iteration.
+
     Args:
         stdout: Full stdout text from ``ansible-playbook``.
 
     Returns:
-        Mapping of integer ref index to resolved image string.
+        Mapping of integer ref index to list of resolved image strings.
     """
-    resolved: dict[int, str] = {}
+    resolved: dict[int, list[str]] = {}
     for m in _MARKER_RE.finditer(stdout):
         try:
             idx = int(m.group(1))
         except ValueError:
             continue
-        resolved[idx] = m.group(2)
+        resolved.setdefault(idx, []).append(m.group(2))
     return resolved
 
 
-def resolve_ansible_playbook(
+def _find_playbook_dir(refs: list[ImageReference]) -> Path | None:
+    """Find the best directory for the generated playbook.
+
+    Walks up from each unresolved ref's source file to find a role root
+    (a directory whose parent is named ``roles``).  Writing the playbook
+    to the role root allows ansible's ``lookup('file', ...)`` to resolve
+    files from the role's ``files/`` subdirectory.
+
+    Args:
+        refs: Image references to inspect.
+
+    Returns:
+        Path to a role root directory, or ``None`` if no role context is found.
+    """
+    for ref in refs:
+        if not ref.unresolved_variables:
+            continue
+        parts = Path(ref.source.file).parts
+        for i, part in enumerate(parts):
+            if part == "roles" and i + 1 < len(parts):
+                role_root = Path(*parts[: i + 2])
+                if role_root.is_dir():
+                    return role_root
+    return None
+
+
+def resolve_ansible(
     refs: list[ImageReference],
     ansible_config: AnsibleConfig | None = None,
 ) -> list[ImageReference]:
-    """Resolve Ansible Jinja2 templates via a generated ``ansible-playbook`` run.
+    """Resolve Ansible Jinja2 templates via ``ansible-playbook``.
 
     Generates a temporary playbook that renders each unresolved image template
     and emits ``SHIPWRECK_RESOLVE|<index>|<value>`` markers to stdout.
     Parses those markers to build the resolved image strings.
 
-    Falls back to :func:`resolve_ansible_simple` with an empty variable dict
-    (i.e. a no-op) when ``ansible-playbook`` is not available or the run
-    fails.
+    When ``ansible-playbook`` is not available or the run fails, unresolved
+    refs are returned unchanged.
 
     A new ``ImageReference`` object is returned for every input ref — input
     objects are never mutated.
@@ -209,6 +157,7 @@ def resolve_ansible_playbook(
         return list(refs)
 
     playbook_content = _build_playbook(refs)
+    logger.debug("Generated playbook:\n%s", playbook_content)
 
     cmd = ["ansible-playbook"]
     if ansible_config is not None:
@@ -221,34 +170,46 @@ def resolve_ansible_playbook(
         # Default: run against localhost without gathering facts
         cmd += ["-i", "localhost,", "--connection=local"]
 
+    # Place the generated playbook in a role directory when possible so that
+    # ansible's lookup('file', ...) searches the role's files/ subdirectory.
+    # An explicit playbook_dir in the config takes priority over auto-detection.
+    if ansible_config and ansible_config.playbook_dir:
+        playbook_dir: Path | None = Path(ansible_config.playbook_dir)
+    else:
+        playbook_dir = _find_playbook_dir(refs)
     with tempfile.NamedTemporaryFile(
         mode="w",
         suffix=".yml",
         delete=False,
         prefix="shipwreck_resolve_",
+        dir=playbook_dir,
     ) as tmp:
         tmp.write(playbook_content)
         playbook_path = tmp.name
 
+    full_cmd = [*cmd, playbook_path]
+    logger.info("Ansible playbook execution: %s", " ".join(full_cmd))
     try:
         proc = subprocess.run(
-            [*cmd, playbook_path],
+            full_cmd,
             capture_output=True,
             text=True,
             check=False,
         )
         stdout = proc.stdout
     except FileNotFoundError:
-        # ansible-playbook not installed — fall back gracefully
-        return resolve_ansible_simple(refs, {})
+        logger.info("Ansible resolution SKIPPED: ansible-playbook not installed")
+        return list(refs)
     finally:
         Path(playbook_path).unlink(missing_ok=True)
 
     if proc.returncode != 0:
-        # Playbook failed — fall back to simple (no-op) resolution
-        return resolve_ansible_simple(refs, {})
+        logger.info("Ansible playbook FAILED (rc=%d): %s", proc.returncode, proc.stderr.strip() or proc.stdout.strip())
 
     resolved_map = _parse_playbook_output(stdout)
+
+    if not resolved_map:
+        return list(refs)
 
     result: list[ImageReference] = []
     for idx, ref in enumerate(refs):
@@ -256,24 +217,32 @@ def resolve_ansible_playbook(
             result.append(ref)
             continue
 
-        resolved_raw = resolved_map[idx]
-        registry, name, tag, parse_unresolved = parse_image_string(resolved_raw)
+        values = resolved_map[idx]
+        # Deduplicate while preserving order
+        seen: set[str] = set()
+        unique_values: list[str] = []
+        for v in values:
+            if v not in seen:
+                seen.add(v)
+                unique_values.append(v)
 
-        still_unresolved = list(parse_unresolved)
-        confidence = Confidence.MEDIUM if not still_unresolved else ref.confidence
+        for resolved_raw in unique_values:
+            registry, name, tag, parse_unresolved = parse_image_string(resolved_raw)
+            still_unresolved = list(parse_unresolved)
+            confidence = Confidence.MEDIUM if not still_unresolved else ref.confidence
 
-        result.append(
-            ImageReference(
-                raw=resolved_raw,
-                registry=registry,
-                name=name,
-                tag=tag,
-                source=ref.source,
-                relationship=ref.relationship,
-                confidence=confidence,
-                unresolved_variables=still_unresolved,
-                metadata=dict(ref.metadata),
+            result.append(
+                ImageReference(
+                    raw=resolved_raw,
+                    registry=registry,
+                    name=name,
+                    tag=tag,
+                    source=ref.source,
+                    relationship=ref.relationship,
+                    confidence=confidence,
+                    unresolved_variables=still_unresolved,
+                    metadata=dict(ref.metadata),
+                )
             )
-        )
 
     return result

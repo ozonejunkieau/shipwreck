@@ -355,6 +355,38 @@ def build_demo_graph() -> Graph:
         ],
     )
 
+    # ── 14b. registry.example.com/infra/log-shipper — ansible loop-unwound ─
+    nodes["registry.example.com/infra/log-shipper"] = GraphNode(
+        id="registry.example.com/infra/log-shipper",
+        canonical="registry.example.com/infra/log-shipper",
+        tags_referenced=["2.1"],
+        latest_available=None,
+        staleness="unknown",
+        version_scheme=None,
+        classification="external",
+        criticality=0.35,
+        registry_metadata=RegistryMetadata(),
+        sources=[
+            _src("ansible-deploy", "roles/worker/tasks/main.yml", 12, EdgeType.CONSUMES, "2.1"),
+        ],
+    )
+
+    # ── 14c. registry.example.com/infra/config-reloader — ansible loop-unwound
+    nodes["registry.example.com/infra/config-reloader"] = GraphNode(
+        id="registry.example.com/infra/config-reloader",
+        canonical="registry.example.com/infra/config-reloader",
+        tags_referenced=["1.0"],
+        latest_available=None,
+        staleness="unknown",
+        version_scheme=None,
+        classification="external",
+        criticality=0.35,
+        registry_metadata=RegistryMetadata(),
+        sources=[
+            _src("ansible-deploy", "roles/worker/tasks/main.yml", 12, EdgeType.CONSUMES, "1.0"),
+        ],
+    )
+
     # ── 15. docker.io/library/alpine — external base, current ─────────────
     nodes["docker.io/library/alpine"] = GraphNode(
         id="docker.io/library/alpine",
@@ -600,12 +632,34 @@ def build_demo_graph() -> Graph:
         classification_counts=classification_counts,
     )
 
+    # Warnings for refs that remain unresolvable even after ansible-playbook:
+    # - The variable-loop task (loop: "{{ extra_workers | default([]) }}") can't
+    #   be unwound because the loop value itself is a Jinja2 expression.
+    # - The vault lookup can never be resolved statically.
+    # Note: literal inline loops (like the sidecar services task) ARE resolved
+    # by ansible-playbook into the log-shipper and config-reloader nodes above.
+    warnings = [
+        {
+            "message": "Unresolvable image reference: {{ item.image }} (loop variable is a Jinja2 expression)",
+            "file": "roles/worker/tasks/main.yml",
+            "line": 27,
+            "raw": "{{ item.image }}",
+        },
+        {
+            "message": "Unresolvable image reference (vault lookup)",
+            "file": "roles/worker/tasks/main.yml",
+            "line": 34,
+            "raw": "registry.example.com/apps/worker:{{ lookup('hashi_vault', 'secret/deploy:worker_version') }}",
+        },
+    ]
+
     graph = Graph(
         generated_at=datetime.now(tz=timezone.utc).isoformat(),
         config_hash="demo-hardcoded-no-config",
         nodes=nodes,
         edges=edges,
         summary=summary,
+        warnings=warnings,
     )
 
     return graph

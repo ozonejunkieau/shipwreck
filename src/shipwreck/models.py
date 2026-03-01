@@ -31,6 +31,7 @@ class SourceLocation(BaseModel):
     file: str
     line: int
     parser: str
+    scope: str | None = None
 
 
 class ImageReference(BaseModel):
@@ -140,3 +141,4 @@ class Graph(BaseModel):
     nodes: dict[str, GraphNode] = Field(default_factory=dict)
     edges: list[GraphEdge] = Field(default_factory=list)
     summary: GraphSummary = Field(default_factory=GraphSummary)
+    warnings: list[dict[str, Any]] = Field(default_factory=list)

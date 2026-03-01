@@ -1,0 +1,24 @@
+---
+# Task with literal inline loop items — ansible-playbook can unwind these.
+
+- name: Deploy sidecar services
+  community.docker.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    state: started
+  loop:
+    - name: log-shipper
+      image: registry.example.com/infra/log-shipper:2.1
+    - name: config-reloader
+      image: registry.example.com/infra/config-reloader:1.0
+
+- name: Deploy with custom loop_var
+  community.docker.docker_container:
+    name: "{{ svc.name }}"
+    image: "{{ svc.image }}"
+    state: started
+  loop:
+    - name: metrics
+      image: registry.example.com/infra/metrics:3.0
+  loop_control:
+    loop_var: svc

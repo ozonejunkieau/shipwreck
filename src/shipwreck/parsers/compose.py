@@ -165,8 +165,10 @@ def _find_image_lines(raw_text: str) -> dict[str, list[int]]:
 
         svc_match = service_key_re.match(line)
         if svc_match:
-            current_service = svc_match.group(1)
-            result.setdefault(current_service, [])
+            svc_name = svc_match.group(1)
+            assert svc_name is not None  # group 1 always captures
+            current_service = svc_name
+            result.setdefault(svc_name, [])
             continue
 
         img_match = image_line_re.match(line)

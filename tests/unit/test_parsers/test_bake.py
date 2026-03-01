@@ -160,6 +160,45 @@ def test_non_image_context_ignored(parser: BakeParser) -> None:
 
 
 # ---------------------------------------------------------------------------
+# with_context_vars.hcl — variable interpolation in contexts
+# ---------------------------------------------------------------------------
+
+
+def test_context_variables_resolved(parser: BakeParser) -> None:
+    """Variables in docker-image:// context URLs are interpolated."""
+    refs = parser.parse(FIXTURES / "with_context_vars.hcl", repo_name="test-repo")
+
+    builds_from = [r for r in refs if r.relationship == EdgeType.BUILDS_FROM]
+    assert len(builds_from) == 1
+
+    ref = builds_from[0]
+    assert ref.raw == "registry.example.com/base/python:3.12"
+    assert ref.registry == "registry.example.com"
+    assert ref.name == "base/python"
+    assert ref.tag == "3.12"
+
+
+def test_context_variables_confidence(parser: BakeParser) -> None:
+    """Context refs with resolved variables get MEDIUM confidence."""
+    refs = parser.parse(FIXTURES / "with_context_vars.hcl", repo_name="test-repo")
+
+    builds_from = [r for r in refs if r.relationship == EdgeType.BUILDS_FROM]
+    assert builds_from[0].confidence == Confidence.MEDIUM
+    assert builds_from[0].unresolved_variables == []
+
+
+def test_context_unresolved_variable_tracked(parser: BakeParser) -> None:
+    """Context refs with unknown variables get LOW confidence and unresolved list."""
+    # with_contexts.hcl uses ${REGISTRY} but only in tags — here we test a
+    # scenario where a context variable has no default.
+    refs = parser.parse(FIXTURES / "with_context_vars.hcl", repo_name="test-repo")
+
+    # The PRODUCES ref uses ${REGISTRY} which IS defined → MEDIUM
+    produces = [r for r in refs if r.relationship == EdgeType.PRODUCES]
+    assert produces[0].confidence == Confidence.MEDIUM
+
+
+# ---------------------------------------------------------------------------
 # with_inherits.hcl — target inheritance
 # ---------------------------------------------------------------------------
 

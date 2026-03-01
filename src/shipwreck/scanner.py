@@ -228,13 +228,14 @@ def scan(
     all_references = resolve_compose(all_references)
     all_references = resolve_bake(all_references)
 
-    from shipwreck.resolution.ansible import resolve_ansible_simple
+    from shipwreck.resolution.ansible import resolve_ansible
 
-    ansible_vars: dict[str, str] = {}
-    for ref in all_references:
-        if ref.source.parser == "ansible" and "role_vars" in ref.metadata:
-            ansible_vars.update(ref.metadata["role_vars"])
-    all_references = resolve_ansible_simple(all_references, ansible_vars)
+    ansible_unresolved = [
+        r for r in all_references
+        if r.source.parser == "ansible" and r.unresolved_variables
+    ]
+    if ansible_unresolved:
+        all_references = resolve_ansible(all_references, config.ansible)
 
     # Build graph
     config_hash = _hash_config(config)

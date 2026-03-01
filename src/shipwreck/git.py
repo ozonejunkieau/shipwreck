@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 
 from rich.console import Console
 
+logger = logging.getLogger(__name__)
 console = Console()
 
 
@@ -51,6 +53,7 @@ def clone_repo(url: str, dest: Path, ref: str = "main") -> None:
     Raises:
         GitError: If the clone fails.
     """
+    logger.info("Git clone: %s → %s (ref=%s)", url, dest, ref)
     console.print(f"[blue]Cloning[/blue] {url} → {dest}")
     _run(["git", "clone", "--depth=1", "--branch", ref, url, str(dest)])
 
@@ -65,6 +68,7 @@ def pull_repo(repo_path: Path, ref: str = "main") -> None:
     Raises:
         GitError: If the pull fails.
     """
+    logger.info("Git pull: %s (ref=%s)", repo_path, ref)
     console.print(f"[blue]Pulling[/blue] {repo_path}")
     _run(["git", "fetch", "--depth=1", "origin", ref], cwd=repo_path)
     _run(["git", "checkout", ref], cwd=repo_path)

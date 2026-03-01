@@ -1,0 +1,7 @@
+---
+# Nginx role defaults — resolved by Shipwreck's role variable loader.
+
+nginx_image: registry.example.com/infra/nginx
+nginx_version: "1.27.3"
+nginx_exporter_image: nginx/nginx-prometheus-exporter
+nginx_exporter_version: "1.3.0"

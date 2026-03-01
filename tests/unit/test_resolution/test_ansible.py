@@ -1,7 +1,8 @@
-"""Unit tests for resolution.ansible — Ansible variable resolution."""
+"""Unit tests for resolution.ansible — Ansible variable resolution via ansible-playbook."""
 
 from __future__ import annotations
 
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import yaml
@@ -10,9 +11,9 @@ from shipwreck.config import AnsibleConfig
 from shipwreck.models import Confidence, EdgeType, ImageReference, SourceLocation
 from shipwreck.resolution.ansible import (
     _build_playbook,
+    _find_playbook_dir,
     _parse_playbook_output,
-    resolve_ansible_playbook,
-    resolve_ansible_simple,
+    resolve_ansible,
 )
 
 
@@ -37,81 +38,6 @@ def _make_ref(
         confidence=confidence,
         unresolved_variables=unresolved or [],
     )
-
-
-# ---------------------------------------------------------------------------
-# resolve_ansible_simple
-# ---------------------------------------------------------------------------
-
-
-def test_simple_single_var_resolved() -> None:
-    """{{ var }} is replaced when var is present in variables dict."""
-    ref = _make_ref("{{ registry }}/myapp:latest", unresolved=["registry"])
-    result = resolve_ansible_simple([ref], variables={"registry": "reg.io"})
-
-    assert len(result) == 1
-    resolved = result[0]
-    assert resolved.raw == "reg.io/myapp:latest"
-    assert resolved.unresolved_variables == []
-
-
-def test_simple_multiple_vars_in_one_string() -> None:
-    """Multiple {{ var }} tokens are all substituted."""
-    ref = _make_ref(
-        "{{ registry }}/{{ org }}/app:{{ tag }}",
-        unresolved=["registry", "org", "tag"],
-    )
-    variables = {"registry": "reg.io", "org": "acme", "tag": "1.0.0"}
-    result = resolve_ansible_simple([ref], variables=variables)
-
-    assert result[0].raw == "reg.io/acme/app:1.0.0"
-    assert result[0].unresolved_variables == []
-
-
-def test_simple_unresolvable_var_remains() -> None:
-    """Unknown variables are left as {{ var }} and reported as unresolved."""
-    ref = _make_ref("{{ unknown_registry }}/app:v1", unresolved=["unknown_registry"])
-    result = resolve_ansible_simple([ref], variables={})
-
-    assert result[0].raw == "{{ unknown_registry }}/app:v1"
-    assert "unknown_registry" in result[0].unresolved_variables
-
-
-def test_simple_confidence_raised_to_medium() -> None:
-    """Confidence becomes MEDIUM when all variables are resolved."""
-    ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
-    result = resolve_ansible_simple([ref], variables={"registry": "reg.io"})
-    assert result[0].confidence == Confidence.MEDIUM
-
-
-def test_simple_confidence_unchanged_when_unresolved_remain() -> None:
-    """Confidence stays LOW when some variables are still unresolved."""
-    ref = _make_ref("{{ registry }}/{{ missing }}/app:v1", unresolved=["registry", "missing"])
-    result = resolve_ansible_simple([ref], variables={"registry": "reg.io"})
-    assert result[0].confidence == Confidence.LOW
-
-
-def test_simple_no_op_when_no_unresolved_variables() -> None:
-    """Refs with no unresolved_variables pass through unchanged."""
-    ref = _make_ref("nginx:1.25", unresolved=[])
-    ref = ref.model_copy(
-        update={
-            "registry": "docker.io",
-            "name": "library/nginx",
-            "tag": "1.25",
-            "confidence": Confidence.HIGH,
-        }
-    )
-    result = resolve_ansible_simple([ref], variables={"registry": "reg.io"})
-    assert result[0] is ref
-
-
-def test_simple_input_refs_not_mutated() -> None:
-    """Input ImageReference objects are never modified in-place."""
-    ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
-    original_raw = ref.raw
-    resolve_ansible_simple([ref], variables={"registry": "reg.io"})
-    assert ref.raw == original_raw
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +71,49 @@ def test_build_playbook_skips_already_resolved_refs() -> None:
     assert len(tasks) == 1
 
 
+def test_build_playbook_tasks_have_ignore_errors() -> None:
+    """Generated tasks include ignore_errors so one failure doesn't stop the run."""
+    ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
+    playbook_str = _build_playbook([ref])
+    data = yaml.safe_load(playbook_str)
+    task = data[0]["tasks"][0]
+    assert task["ignore_errors"] is True
+
+
+# ---------------------------------------------------------------------------
+# _build_playbook — loop context pass-through
+# ---------------------------------------------------------------------------
+
+
+def test_build_playbook_includes_loop_context() -> None:
+    """Generated playbook includes loop from ref metadata."""
+    ref = _make_ref("{{ item.image }}", unresolved=["item"])
+    ref.metadata["loop"] = [
+        {"name": "a", "image": "nginx:1.25"},
+        {"name": "b", "image": "redis:7"},
+    ]
+    playbook_str = _build_playbook([ref])
+    data = yaml.safe_load(playbook_str)
+
+    task = data[0]["tasks"][0]
+    assert "loop" in task
+    assert len(task["loop"]) == 2  # noqa: PLR2004
+    assert task["loop"][0]["image"] == "nginx:1.25"
+
+
+def test_build_playbook_includes_loop_control() -> None:
+    """Generated playbook includes loop_control with loop_var from ref metadata."""
+    ref = _make_ref("{{ svc.image }}", unresolved=["svc"])
+    ref.metadata["loop"] = [{"name": "a", "image": "nginx:1.25"}]
+    ref.metadata["loop_var"] = "svc"
+    playbook_str = _build_playbook([ref])
+    data = yaml.safe_load(playbook_str)
+
+    task = data[0]["tasks"][0]
+    assert "loop_control" in task
+    assert task["loop_control"]["loop_var"] == "svc"
+
+
 # ---------------------------------------------------------------------------
 # _parse_playbook_output helper
 # ---------------------------------------------------------------------------
@@ -158,7 +127,7 @@ def test_parse_playbook_output_basic() -> None:
         '}\n'
     )
     resolved = _parse_playbook_output(stdout)
-    assert resolved == {0: "nginx:1.25"}
+    assert resolved == {0: ["nginx:1.25"]}
 
 
 def test_parse_playbook_output_multiple_refs() -> None:
@@ -168,8 +137,8 @@ def test_parse_playbook_output_multiple_refs() -> None:
         'ok: [localhost] => {"msg": "SHIPWRECK_RESOLVE|1|redis:7.0"}\n'
     )
     resolved = _parse_playbook_output(stdout)
-    assert resolved[0] == "reg.io/app:v1"
-    assert resolved[1] == "redis:7.0"
+    assert resolved[0] == ["reg.io/app:v1"]
+    assert resolved[1] == ["redis:7.0"]
 
 
 def test_parse_playbook_output_no_markers() -> None:
@@ -179,13 +148,42 @@ def test_parse_playbook_output_no_markers() -> None:
     assert resolved == {}
 
 
+def test_parse_playbook_output_ignores_error_context() -> None:
+    """Markers echoed in ansible error context (raw YAML lines) are not matched."""
+    # When a task fails with ignore_errors, ansible echoes the raw YAML line
+    # containing the marker but without JSON quoting. The regex must only match
+    # markers inside JSON strings (preceded by ").
+    stdout = (
+        '[ERROR]: Task failed: ...\n'
+        '3   tasks:\n'
+        '4   - debug:\n'
+        '5       msg: SHIPWRECK_RESOLVE|0|{{ internal_registry }}/base/python:3.12-slim\n'
+        '             ^ column 12\n'
+        'fatal: [localhost]: FAILED! => {"msg": "error..."}\n'
+        '...ignoring\n'
+    )
+    resolved = _parse_playbook_output(stdout)
+    assert resolved == {}
+
+
+def test_parse_playbook_output_multi_value_loop() -> None:
+    """Multiple SHIPWRECK_RESOLVE lines with same idx are collected as a list."""
+    stdout = (
+        'ok: [localhost] => (item={...}) => {"msg": "SHIPWRECK_RESOLVE|0|nginx:1.25"}\n'
+        'ok: [localhost] => (item={...}) => {"msg": "SHIPWRECK_RESOLVE|0|redis:7.0"}\n'
+    )
+    resolved = _parse_playbook_output(stdout)
+    assert 0 in resolved
+    assert resolved[0] == ["nginx:1.25", "redis:7.0"]
+
+
 # ---------------------------------------------------------------------------
-# resolve_ansible_playbook — subprocess mocking
+# resolve_ansible — subprocess mocking
 # ---------------------------------------------------------------------------
 
 
-def test_playbook_resolution_via_mocked_subprocess() -> None:
-    """resolve_ansible_playbook uses parsed subprocess output to resolve refs."""
+def test_resolution_via_mocked_subprocess() -> None:
+    """resolve_ansible uses parsed subprocess output to resolve refs."""
     ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
 
     mock_proc = MagicMock()
@@ -195,7 +193,7 @@ def test_playbook_resolution_via_mocked_subprocess() -> None:
     )
 
     with patch("shipwreck.resolution.ansible.subprocess.run", return_value=mock_proc):
-        result = resolve_ansible_playbook([ref])
+        result = resolve_ansible([ref])
 
     assert len(result) == 1
     assert result[0].raw == "reg.io/app:v1"
@@ -203,37 +201,38 @@ def test_playbook_resolution_via_mocked_subprocess() -> None:
     assert result[0].confidence == Confidence.MEDIUM
 
 
-def test_playbook_fallback_when_ansible_not_found() -> None:
-    """When ansible-playbook is not installed, falls back to simple (no-op) resolution."""
+def test_fallback_when_ansible_not_found() -> None:
+    """When ansible-playbook is not installed, refs are returned unchanged."""
     ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
 
     with patch(
         "shipwreck.resolution.ansible.subprocess.run",
         side_effect=FileNotFoundError("ansible-playbook not found"),
     ):
-        result = resolve_ansible_playbook([ref])
+        result = resolve_ansible([ref])
 
-    # Simple fallback with empty vars = no-op, original ref unchanged
     assert result[0].raw == "{{ registry }}/app:v1"
     assert "registry" in result[0].unresolved_variables
 
 
-def test_playbook_fallback_when_ansible_returns_nonzero() -> None:
-    """When ansible-playbook fails (nonzero exit), falls back to simple (no-op) resolution."""
+def test_fallback_when_ansible_returns_nonzero() -> None:
+    """When ansible-playbook fails, successfully parsed refs are still used."""
     ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
 
     mock_proc = MagicMock()
     mock_proc.returncode = 1
     mock_proc.stdout = ""
+    mock_proc.stderr = "some error"
 
     with patch("shipwreck.resolution.ansible.subprocess.run", return_value=mock_proc):
-        result = resolve_ansible_playbook([ref])
+        result = resolve_ansible([ref])
 
+    # No markers parsed from empty stdout, refs returned unchanged
     assert result[0].raw == "{{ registry }}/app:v1"
     assert "registry" in result[0].unresolved_variables
 
 
-def test_playbook_ansible_config_passed_to_subprocess() -> None:
+def test_ansible_config_passed_to_subprocess() -> None:
     """AnsibleConfig inventory/limit/vault args are forwarded to ansible-playbook."""
     ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
     config = AnsibleConfig(
@@ -251,7 +250,7 @@ def test_playbook_ansible_config_passed_to_subprocess() -> None:
     with patch(
         "shipwreck.resolution.ansible.subprocess.run", return_value=mock_proc
     ) as mock_run:
-        resolve_ansible_playbook([ref], ansible_config=config)
+        resolve_ansible([ref], ansible_config=config)
 
     call_args = mock_run.call_args[0][0]  # first positional arg is the cmd list
     assert "-i" in call_args
@@ -262,12 +261,111 @@ def test_playbook_ansible_config_passed_to_subprocess() -> None:
     assert "/etc/vault-pass" in call_args
 
 
-def test_playbook_no_op_when_all_refs_resolved() -> None:
+def test_no_op_when_all_refs_resolved() -> None:
     """When no refs have unresolved variables, subprocess is never called."""
     ref = _make_ref("nginx:1.25", unresolved=[])
 
     with patch("shipwreck.resolution.ansible.subprocess.run") as mock_run:
-        result = resolve_ansible_playbook([ref])
+        result = resolve_ansible([ref])
 
     mock_run.assert_not_called()
     assert result[0] is ref
+
+
+def test_loop_expansion() -> None:
+    """Loop ref is expanded into multiple resolved ImageReference objects."""
+    ref = _make_ref("{{ item.image }}", unresolved=["item"])
+    ref.metadata["loop"] = [
+        {"name": "a", "image": "nginx:1.25"},
+        {"name": "b", "image": "redis:7"},
+    ]
+
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = (
+        'ok: [localhost] => (item={...}) => {"msg": "SHIPWRECK_RESOLVE|0|nginx:1.25"}\n'
+        'ok: [localhost] => (item={...}) => {"msg": "SHIPWRECK_RESOLVE|0|redis:7"}\n'
+    )
+
+    with patch("shipwreck.resolution.ansible.subprocess.run", return_value=mock_proc):
+        result = resolve_ansible([ref])
+
+    assert len(result) == 2  # noqa: PLR2004
+    raws = [r.raw for r in result]
+    assert "nginx:1.25" in raws
+    assert "redis:7" in raws
+    assert all(r.confidence == Confidence.MEDIUM for r in result)
+
+
+def test_partial_resolution_with_ignore_errors() -> None:
+    """Some tasks fail (ignore_errors) while others resolve successfully."""
+    ref_ok = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
+    ref_fail = _make_ref("{{ unknown }}/app:v1", unresolved=["unknown"])
+
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = (
+        'ok: [localhost] => {"msg": "SHIPWRECK_RESOLVE|0|reg.io/app:v1"}\n'
+        # ref 1 failed (ignore_errors), no SHIPWRECK_RESOLVE|1| line
+    )
+
+    with patch("shipwreck.resolution.ansible.subprocess.run", return_value=mock_proc):
+        result = resolve_ansible([ref_ok, ref_fail])
+
+    assert len(result) == 2  # noqa: PLR2004
+    assert result[0].raw == "reg.io/app:v1"
+    assert result[0].confidence == Confidence.MEDIUM
+    # Failed ref passes through unchanged
+    assert result[1].raw == "{{ unknown }}/app:v1"
+    assert "unknown" in result[1].unresolved_variables
+
+
+# ---------------------------------------------------------------------------
+# _find_playbook_dir helper
+# ---------------------------------------------------------------------------
+
+
+def test_find_playbook_dir_returns_role_root(tmp_path: Path) -> None:
+    """Role root is returned when a ref's source file is inside roles/<name>/."""
+    role_root = tmp_path / "roles" / "worker"
+    tasks_dir = role_root / "tasks"
+    tasks_dir.mkdir(parents=True)
+    (role_root / "files").mkdir()
+
+    ref = _make_ref("{{ x }}", unresolved=["x"])
+    ref.source.file = str(tasks_dir / "main.yml")
+
+    assert _find_playbook_dir([ref]) == role_root
+
+
+def test_find_playbook_dir_returns_none_without_role() -> None:
+    """None is returned when no role directory structure is detected."""
+    ref = _make_ref("{{ x }}", unresolved=["x"])
+    ref.source.file = "/some/playbooks/site.yml"
+
+    assert _find_playbook_dir([ref]) is None
+
+
+def test_playbook_dir_config_overrides_autodetect(tmp_path: Path) -> None:
+    """AnsibleConfig.playbook_dir takes priority over auto-detected role root."""
+    ref = _make_ref("{{ registry }}/app:v1", unresolved=["registry"])
+
+    config = AnsibleConfig(
+        inventory="localhost,",
+        playbook_dir=str(tmp_path),
+    )
+
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+    mock_proc.stdout = (
+        'ok: [localhost] => {"msg": "SHIPWRECK_RESOLVE|0|reg.io/app:v1"}\n'
+    )
+
+    with patch(
+        "shipwreck.resolution.ansible.subprocess.run", return_value=mock_proc
+    ) as mock_run:
+        resolve_ansible([ref], ansible_config=config)
+
+    # The playbook path should be inside the configured playbook_dir
+    playbook_path = mock_run.call_args[0][0][-1]  # last arg is the playbook path
+    assert playbook_path.startswith(str(tmp_path))

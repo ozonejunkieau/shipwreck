@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import warnings
 
 from shipwreck.config import RegistryConfig, RegistryPolicy
+
+logger = logging.getLogger(__name__)
 
 
 def should_query_registry(
@@ -41,14 +44,17 @@ def should_query_registry(
     # Rule 1 — explicitly configured internal registries are always allowed.
     for reg in config_registries:
         if reg.url == registry_url and reg.internal:
+            logger.info("Registry query ALLOWED: %s (configured as internal)", registry_url)
             return True
 
     # Rule 2 — explicit external allowlist.
     if registry_url in policy.external_allowlist:
+        logger.info("Registry query ALLOWED: %s (in external allowlist)", registry_url)
         return True
 
     # Rule 3 — non-interactive mode: skip and warn.
     if non_interactive:
+        logger.info("Registry query DENIED: %s (non-interactive mode, not allowlisted)", registry_url)
         warnings.warn(
             f"Skipping external registry '{registry_url}' in non-interactive mode.",
             stacklevel=2,
@@ -57,7 +63,9 @@ def should_query_registry(
 
     # Rule 4 — caller should prompt; we signal allowed so it can proceed.
     if policy.prompt_external:
+        logger.info("Registry query ALLOWED: %s (prompt_external=true, caller should confirm)", registry_url)
         return True
 
     # Rule 5 — default deny.
+    logger.info("Registry query DENIED: %s (no matching policy, default deny)", registry_url)
     return False

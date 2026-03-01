@@ -1,0 +1,29 @@
+---
+# Database container deployment — plain image references with pinned versions.
+
+- name: Deploy PostgreSQL
+  community.docker.docker_container:
+    name: postgres
+    image: postgres:16.4-alpine
+    state: started
+    restart_policy: unless-stopped
+    env:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: "{{ vault_db_password }}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+- name: Deploy pgbouncer connection pooler
+  community.docker.docker_container:
+    name: pgbouncer
+    image: bitnami/pgbouncer:1.23.1
+    state: started
+    restart_policy: unless-stopped
+    env:
+      POSTGRESQL_HOST: postgres
+      PGBOUNCER_DATABASE: appdb
+    ports:
+      - "6432:6432"

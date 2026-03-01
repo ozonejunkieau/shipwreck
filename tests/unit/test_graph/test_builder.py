@@ -229,9 +229,9 @@ class TestConsumesCreatesNode:
 
 
 class TestUnresolvedTemplateNodeId:
-    """Unresolved template string becomes node id."""
+    """Unresolved template refs are filtered out and produce warnings."""
 
-    def test_unresolved_template_node_id(self) -> None:
+    def test_unresolved_template_filtered_to_warning(self) -> None:
         refs = [
             ImageReference(
                 raw="${IMAGE_NAME}:${IMAGE_TAG}",
@@ -245,9 +245,11 @@ class TestUnresolvedTemplateNodeId:
             )
         ]
         graph = build_graph(refs, _CONFIG)
-        assert "${IMAGE_NAME}:${IMAGE_TAG}" in graph.nodes
+        assert "${IMAGE_NAME}:${IMAGE_TAG}" not in graph.nodes
+        assert len(graph.warnings) == 1
+        assert graph.warnings[0]["raw"] == "${IMAGE_NAME}:${IMAGE_TAG}"
 
-    def test_unresolved_counted_in_summary(self) -> None:
+    def test_unresolved_warning_not_counted_as_node(self) -> None:
         refs = [
             ImageReference(
                 raw="${BASE_IMAGE}",
@@ -261,7 +263,8 @@ class TestUnresolvedTemplateNodeId:
             )
         ]
         graph = build_graph(refs, _CONFIG)
-        assert graph.summary.unresolved_references >= 1
+        assert graph.summary.total_images == 0
+        assert len(graph.warnings) == 1
 
 
 class TestSummaryCounts:
@@ -321,6 +324,158 @@ class TestStandaloneBuildsFromSynthetic:
         edge = graph.edges[0]
         assert edge.source == "file:myrepo:Dockerfile"
         assert edge.target == "docker.io/library/python"
+
+
+class TestMultiTargetBakeEdges:
+    """Multiple targets in one bake file should scope edges per target, not cross-pair."""
+
+    def test_multi_target_no_cross_pairing(self) -> None:
+        """Each target's PRODUCES refs should only pair with its own BUILDS_FROM."""
+        refs = [
+            # Target "base": produces base/python, builds from external python
+            _ref(
+                "registry.example.com/base/python:3.12",
+                "registry.example.com",
+                "base/python",
+                "3.12",
+                EdgeType.PRODUCES,
+                file="docker-bake.hcl",
+                line=10,
+            ),
+            _ref(
+                "python:3.12-slim",
+                "docker.io",
+                "library/python",
+                "3.12-slim",
+                EdgeType.BUILDS_FROM,
+                file="docker-bake.hcl",
+                line=8,
+            ),
+            # Target "api": produces apps/api, builds from base/python
+            _ref(
+                "registry.example.com/apps/api:1.0",
+                "registry.example.com",
+                "apps/api",
+                "1.0",
+                EdgeType.PRODUCES,
+                file="docker-bake.hcl",
+                line=20,
+            ),
+            _ref(
+                "registry.example.com/base/python:3.12",
+                "registry.example.com",
+                "base/python",
+                "3.12",
+                EdgeType.BUILDS_FROM,
+                file="docker-bake.hcl",
+                line=18,
+            ),
+        ]
+
+        # Give each target a scope so pairing is confined to the target
+        refs[0].source.scope = "base"
+        refs[1].source.scope = "base"
+        refs[2].source.scope = "api"
+        refs[3].source.scope = "api"
+
+        graph = build_graph(refs, _CONFIG)
+
+        # Should produce exactly 2 edges (one per target), not 2×2=4
+        assert len(graph.edges) == 2  # noqa: PLR2004
+
+        edge_pairs = {(e.source, e.target) for e in graph.edges}
+        # base/python → library/python (base target)
+        assert ("registry.example.com/base/python", "docker.io/library/python") in edge_pairs
+        # apps/api → base/python (api target)
+        assert ("registry.example.com/apps/api", "registry.example.com/base/python") in edge_pairs
+
+        # Cross-pair should NOT exist: apps/api → library/python
+        assert ("registry.example.com/apps/api", "docker.io/library/python") not in edge_pairs
+        # Cross-pair should NOT exist: base/python → base/python
+        assert ("registry.example.com/base/python", "registry.example.com/base/python") not in edge_pairs
+
+    def test_edges_deduplicated(self) -> None:
+        """Duplicate edges (same source, target, relationship) should be collapsed."""
+        refs = [
+            _ref(
+                "myapp:1.0",
+                "docker.io",
+                "myorg/myapp",
+                "1.0",
+                EdgeType.PRODUCES,
+                file="docker-bake.hcl",
+            ),
+            _ref(
+                "myapp:latest",
+                "docker.io",
+                "myorg/myapp",
+                "latest",
+                EdgeType.PRODUCES,
+                file="docker-bake.hcl",
+            ),
+            _ref(
+                "python:3.12",
+                "docker.io",
+                "library/python",
+                "3.12",
+                EdgeType.BUILDS_FROM,
+                file="docker-bake.hcl",
+            ),
+        ]
+        graph = build_graph(refs, _CONFIG)
+
+        # Both tags map to same node myorg/myapp, so only 1 unique edge
+        edges_to_python = [
+            e for e in graph.edges if e.target == "docker.io/library/python"
+        ]
+        assert len(edges_to_python) == 1
+
+
+class TestUnresolvableRefFiltering:
+    """Refs with no registry and no name (unresolvable) are filtered out and produce warnings."""
+
+    def test_unresolvable_ref_excluded_from_nodes(self) -> None:
+        refs = [
+            ImageReference(
+                raw="{{ item.image }}",
+                registry=None,
+                name=None,
+                tag=None,
+                source=_source(),
+                relationship=EdgeType.CONSUMES,
+                confidence=Confidence.LOW,
+                unresolved_variables=["item"],
+            ),
+            _ref("python:3.12", "docker.io", "library/python", "3.12", EdgeType.BUILDS_FROM),
+        ]
+        graph = build_graph(refs, _CONFIG)
+        assert "{{ item.image }}" not in graph.nodes
+        assert "docker.io/library/python" in graph.nodes
+
+    def test_unresolvable_ref_generates_warning(self) -> None:
+        refs = [
+            ImageReference(
+                raw="{{ item.image }}",
+                registry=None,
+                name=None,
+                tag=None,
+                source=_source(file="roles/worker/tasks/main.yml"),
+                relationship=EdgeType.CONSUMES,
+                confidence=Confidence.LOW,
+                unresolved_variables=["item"],
+            ),
+        ]
+        graph = build_graph(refs, _CONFIG)
+        assert len(graph.warnings) == 1
+        assert graph.warnings[0]["raw"] == "{{ item.image }}"
+        assert "roles/worker" in graph.warnings[0]["file"]
+
+    def test_resolved_ref_no_warning(self) -> None:
+        refs = [
+            _ref("python:3.12", "docker.io", "library/python", "3.12", EdgeType.BUILDS_FROM),
+        ]
+        graph = build_graph(refs, _CONFIG)
+        assert len(graph.warnings) == 0
 
 
 class TestMakeNodeId:

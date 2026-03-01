@@ -1,0 +1,25 @@
+# shipwreck-examples.yaml — scan the bundled example data
+#
+# This config uses local paths so you can try Shipwreck immediately
+# without cloning any remote repositories.
+#
+# Usage:
+#   shipwreck hunt --config examples/shipwreck-examples.yaml -o examples/output
+#   shipwreck map  --config examples/shipwreck-examples.yaml -o examples/output --format html
+#   open examples/output/shipwreck.html
+#
+# Or run the full pipeline in one shot:
+#   shipwreck sail --config examples/shipwreck-examples.yaml -o examples/output
+
+repositories:
+  - path: examples/dockerfiles
+    name: dockerfiles
+
+  - path: examples/bake
+    name: bake
+
+  - path: examples/compose
+    name: compose
+
+  - path: examples/ansible
+    name: ansible

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import re
+from collections.abc import Mapping
 
 from shipwreck.models import Confidence, ImageReference
 from shipwreck.parsers.base import parse_image_string
@@ -14,7 +15,7 @@ _ENV_VAR_RE = re.compile(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?")
 
 def resolve_env(
     refs: list[ImageReference],
-    env: dict[str, str] | None = None,
+    env: Mapping[str, str] | None = None,
 ) -> list[ImageReference]:
     """Resolve ``${VAR}``/``$VAR`` references from environment variables.
 
@@ -36,7 +37,7 @@ def resolve_env(
         New list of ``ImageReference`` objects with as many variables
         substituted as possible.
     """
-    effective_env: dict[str, str] = os.environ if env is None else env
+    effective_env: Mapping[str, str] = os.environ if env is None else env
     result: list[ImageReference] = []
 
     for ref in refs:

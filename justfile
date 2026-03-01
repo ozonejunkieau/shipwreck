@@ -9,6 +9,10 @@ install:
 test:
     uv run pytest
 
+# Run pytest with arbitrary args (e.g. just pytest tests/unit -x -v)
+pytest *ARGS:
+    uv run pytest {{ARGS}}
+
 # Run unit tests only
 test-unit:
     uv run pytest tests/unit
@@ -39,6 +43,12 @@ all: lint check test
 # Run shipwreck CLI
 run *ARGS:
     uv run shipwreck {{ARGS}}
+
+# Generate example output from examples/ directory
+examples:
+    uv run shipwreck hunt --config examples/shipwreck-examples.yaml -o examples/output
+    uv run shipwreck map  --config examples/shipwreck-examples.yaml -o examples/output --format html
+    uv run shipwreck map  --config examples/shipwreck-examples.yaml -o examples/output --format json
 
 # CLI command shortcuts
 hunt *ARGS:

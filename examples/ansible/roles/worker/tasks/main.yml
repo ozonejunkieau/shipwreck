@@ -1,0 +1,54 @@
+---
+# Worker role — demonstrates loop variables (LOW confidence)
+# and lookup() calls (also LOW confidence / unresolved).
+
+- name: Deploy Celery worker
+  community.docker.docker_container:
+    name: celery-worker
+    image: "{{ worker_registry }}/{{ worker_image }}:{{ worker_version }}"
+    state: started
+    restart_policy: unless-stopped
+    env:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_CONCURRENCY: "{{ worker_concurrency }}"
+
+- name: Deploy Celery beat scheduler
+  community.docker.docker_container:
+    name: celery-beat
+    image: "{{ worker_registry }}/{{ worker_image }}:{{ worker_version }}"
+    state: started
+    restart_policy: unless-stopped
+    env:
+      CELERY_BROKER_URL: redis://redis:6379/0
+
+- name: Deploy additional worker services from list
+  community.docker.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    state: started
+  loop: "{{ extra_workers | default([]) }}"
+
+- name: Deploy sidecar services
+  community.docker.docker_container:
+    name: "{{ item.name }}"
+    image: "{{ item.image }}"
+    state: started
+  loop:
+    - name: log-shipper
+      image: registry.example.com/infra/log-shipper:2.1
+    - name: config-reloader
+      image: registry.example.com/infra/config-reloader:1.0
+
+- name: Deploy nginx with file-lookup version
+  community.docker.docker_container:
+    name: nginx-versioned
+    image: "registry.example.com/infra/nginx:{{ lookup('file', 'nginx_version.txt') | trim }}"
+    state: started
+    restart_policy: unless-stopped
+
+- name: Deploy worker with vault-resolved version
+  community.docker.docker_container:
+    name: special-worker
+    image: "registry.example.com/apps/worker:{{ lookup('hashi_vault', 'secret/deploy:worker_version') }}"
+    state: started
+    restart_policy: unless-stopped

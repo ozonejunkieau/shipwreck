@@ -1,0 +1,9 @@
+---
+# API role handlers — image references in handlers are also parsed.
+
+- name: Restart API
+  community.docker.docker_container:
+    name: api
+    image: "{{ api_registry }}/{{ api_image_name }}:{{ api_version }}"
+    state: started
+    restart: true

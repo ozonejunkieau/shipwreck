@@ -1,0 +1,57 @@
+---
+# Main deployment playbook — deploys the full application stack.
+# Demonstrates play-level vars, inline tasks, role includes,
+# and include_tasks references that Shipwreck traces.
+
+- name: Deploy reverse proxy
+  hosts: proxy_servers
+  become: true
+
+  tasks:
+    - name: Run nginx reverse proxy
+      community.docker.docker_container:
+        name: nginx
+        image: nginx:1.27-alpine
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - /etc/nginx/conf.d:/etc/nginx/conf.d:ro
+
+  roles:
+    - nginx
+
+- name: Deploy application services
+  hosts: app_servers
+  become: true
+  vars:
+    deploy_env: production
+    internal_registry: registry.example.com
+
+  pre_tasks:
+    - name: Pull shared base image
+      community.docker.docker_container:
+        name: base-warmup
+        image: "{{ internal_registry }}/base/python:3.12-slim"
+        state: present
+        pull: true
+
+  tasks:
+    - name: Include database deployment
+      include_tasks: ../tasks/database.yml
+
+    - name: Include cache deployment
+      include_tasks: ../tasks/cache.yml
+
+  roles:
+    - api
+    - worker
+
+- name: Deploy monitoring stack
+  hosts: monitoring_servers
+  become: true
+
+  roles:
+    - monitoring

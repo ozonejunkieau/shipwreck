@@ -1,0 +1,45 @@
+---
+# API service role — demonstrates Jinja2 template resolution,
+# block/rescue/always, and handler notifications.
+
+- name: Deploy API service
+  block:
+    - name: Start API container
+      community.docker.docker_container:
+        name: api
+        image: "{{ api_registry }}/{{ api_image_name }}:{{ api_version }}"
+        state: started
+        restart_policy: unless-stopped
+        env:
+          DATABASE_URL: "postgresql://app:{{ vault_db_password }}@pgbouncer:6432/appdb"
+          REDIS_URL: redis://redis:6379/0
+        ports:
+          - "{{ api_port }}:8000"
+      notify: Restart API
+
+  rescue:
+    - name: Roll back to previous stable version
+      community.docker.docker_container:
+        name: api
+        image: "{{ api_registry }}/{{ api_image_name }}:stable"
+        state: started
+        restart_policy: unless-stopped
+
+  always:
+    - name: Ensure API healthcheck sidecar is running
+      community.docker.docker_container:
+        name: api-healthcheck
+        image: registry.example.com/infra/healthcheck:1.2.0
+        state: started
+        env:
+          TARGET_URL: "http://api:8000/healthz"
+
+- name: Deploy API docs container
+  docker_container:
+    name: api-docs
+    image: swaggerapi/swagger-ui:5.18.2
+    state: started
+    env:
+      API_URL: http://api:8000/openapi.json
+    ports:
+      - "8081:8080"

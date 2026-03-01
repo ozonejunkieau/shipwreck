@@ -104,12 +104,14 @@ def _classify_heuristic(node: GraphNode) -> str:
     has_consumes = EdgeType.CONSUMES in relationships
     has_builds_from = EdgeType.BUILDS_FROM in relationships
 
-    if has_consumes:
-        return "product"
+    if has_consumes and has_produces:
+        return "product"  # we build AND deploy it
     if has_produces and has_builds_from and not has_consumes:
         return "intermediate"
     if has_builds_from and not has_produces and not has_consumes:
         return "base"
+    if has_consumes and not has_produces:
+        return "external"  # consumed but not built locally
 
     # Default: treat as base (external / upstream image with no local context).
     return "base"

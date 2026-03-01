@@ -120,7 +120,7 @@ def resolve_compose(
 
         resolved_raw, still_unresolved = _substitute(ref.raw, base_env)
 
-        if resolved_raw == ref.raw and still_unresolved == ref.unresolved_variables:
+        if resolved_raw == ref.raw:
             # Nothing changed — keep the original ref unchanged
             result.append(ref)
             continue

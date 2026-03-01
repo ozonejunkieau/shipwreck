@@ -1,0 +1,8 @@
+---
+# API service defaults.
+
+api_registry: registry.example.com
+api_image_name: apps/api
+api_version: "3.8.1"
+api_replicas: 2
+api_port: 8000

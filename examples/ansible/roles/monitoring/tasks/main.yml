@@ -1,0 +1,71 @@
+---
+# Monitoring stack — a mix of public images with pinned versions
+# and Jinja2-templated versions resolved from role defaults.
+
+- name: Deploy Prometheus
+  community.docker.docker_container:
+    name: prometheus
+    image: "prom/prometheus:{{ prometheus_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - /etc/prometheus:/etc/prometheus:ro
+
+- name: Deploy Alertmanager
+  community.docker.docker_container:
+    name: alertmanager
+    image: "prom/alertmanager:{{ alertmanager_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "9093:9093"
+
+- name: Deploy Grafana
+  community.docker.docker_container:
+    name: grafana
+    image: "grafana/grafana-oss:{{ grafana_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    env:
+      GF_SECURITY_ADMIN_PASSWORD: "{{ vault_grafana_password }}"
+
+- name: Deploy Loki log aggregator
+  community.docker.docker_container:
+    name: loki
+    image: "grafana/loki:{{ loki_version }}"
+    state: started
+    restart_policy: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+
+- name: Deploy Promtail log shipper
+  community.docker.docker_container:
+    name: promtail
+    image: grafana/promtail:3.3.2
+    state: started
+    restart_policy: unless-stopped
+    volumes:
+      - /var/log:/var/log:ro
+      - /etc/promtail:/etc/promtail:ro
+
+- name: Deploy cadvisor for container metrics
+  containers.podman.podman_container:
+    name: cadvisor
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    state: started
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+    ports:
+      - "8082:8080"

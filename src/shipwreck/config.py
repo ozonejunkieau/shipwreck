@@ -69,6 +69,7 @@ class AnsibleConfig(BaseModel):
     inventory: str
     vault_password_file: str | None = None
     limit: str | None = None
+    playbook_dir: str | None = None
 
 
 class AliasRule(BaseModel):

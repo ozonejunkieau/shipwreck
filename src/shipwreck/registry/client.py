@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 
 class RegistryClient:
@@ -40,6 +43,7 @@ class RegistryClient:
         Returns list of tag strings.
         """
         url = f"https://{self._registry}/v2/{name}/tags/list"
+        logger.info("Registry HTTP GET %s (list tags for %s)", url, name)
         response = self._auth_request("GET", url)
         response.raise_for_status()
         data = response.json()
@@ -53,6 +57,7 @@ class RegistryClient:
         Returns manifest dict with config, layers, etc.
         """
         url = f"https://{self._registry}/v2/{name}/manifests/{reference}"
+        logger.info("Registry HTTP GET %s (manifest for %s:%s)", url, name, reference)
         response = self._auth_request("GET", url, headers={"Accept": self.MANIFEST_MEDIA_TYPE})
         response.raise_for_status()
         return response.json()
@@ -64,6 +69,7 @@ class RegistryClient:
         Returns True if 200, False if 404.
         """
         url = f"https://{self._registry}/v2/{name}/manifests/{tag}"
+        logger.info("Registry HTTP HEAD %s (check tag %s:%s)", url, name, tag)
         response = self._auth_request("HEAD", url, headers={"Accept": self.MANIFEST_MEDIA_TYPE})
         if response.status_code == 404:
             return False
@@ -128,6 +134,7 @@ class RegistryClient:
             if value is not None:
                 params[param] = value
 
+        logger.info("Registry auth token request GET %s (service=%s)", realm, params.get("service", "n/a"))
         try:
             token_response = self._client.get(realm, params=params)
         except httpx.HTTPError:

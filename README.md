@@ -21,20 +21,46 @@ git clone https://github.com/ozonejunkieau/shipwreck.git
 cd shipwreck
 uv sync --all-extras
 
-# Scan repositories and build the graph
-shipwreck hunt --config shipwreck.yaml
+# Scan the bundled examples — no remote repos needed
+shipwreck hunt --config examples/shipwreck-examples.yaml -o examples/output
 
-# Generate reports (HTML, Mermaid, JSON)
-shipwreck map --format html
-
-# Check registries for stale images
-shipwreck lookout
-
-# Run the full pipeline in one shot
-shipwreck sail --config shipwreck.yaml --snapshot
+# Generate an interactive HTML report
+shipwreck map --config examples/shipwreck-examples.yaml -o examples/output --format html
+open examples/output/shipwreck.html
 ```
 
-Reports are written to `.shipwreck/output/` by default.
+Reports are written to `.shipwreck/output/` by default. The examples use `-o examples/output` to keep generated files alongside the example data.
+
+### Try the bundled examples
+
+The `examples/` directory contains a complete set of sample data covering every parser — Dockerfiles, Docker Bake (HCL), Docker Compose, and Ansible playbooks — so you can see Shipwreck in action without any configuration of your own.
+
+```bash
+# Scan all example data and generate reports in one shot
+shipwreck sail --config examples/shipwreck-examples.yaml -o examples/output
+
+# Just scan, then explore the graph interactively
+shipwreck hunt --config examples/shipwreck-examples.yaml -o examples/output
+shipwreck dig --stale          # list stale images
+shipwreck dig --critical       # rank images by criticality
+shipwreck dig --uses postgres  # what depends on postgres?
+
+# Generate specific output formats
+shipwreck map --config examples/shipwreck-examples.yaml -o examples/output --format html
+shipwreck map --config examples/shipwreck-examples.yaml -o examples/output --format mermaid
+shipwreck map --config examples/shipwreck-examples.yaml -o examples/output --format json
+```
+
+The example config ([`examples/shipwreck-examples.yaml`](examples/shipwreck-examples.yaml)) uses local paths, so nothing is cloned or fetched. The example data includes:
+
+| Directory | Parser | What it shows |
+|---|---|---|
+| [`examples/dockerfiles/`](examples/dockerfiles/) | Dockerfile | `FROM` chains, internal base images |
+| [`examples/bake/`](examples/bake/) | Docker Bake | HCL variables, target inheritance, `docker-image://` contexts |
+| [`examples/compose/`](examples/compose/) | Docker Compose | `${VAR:-default}` substitution, `.env` resolution, `build` + `image` |
+| [`examples/ansible/`](examples/ansible/) | Ansible | Role defaults, Jinja2 templates, `block`/`rescue`, loop vars, lookups |
+
+To scan your own repos, copy [`examples/shipwreck-minimal.yaml`](examples/shipwreck-minimal.yaml) and point `repositories:` at your Git URLs or local paths. See [`examples/shipwreck.yaml`](examples/shipwreck.yaml) for every available option.
 
 ---
 
@@ -289,9 +315,68 @@ The pipeline runs in five stages:
 
 1. **Scan** (`hunt`) -- Clone/pull repos, walk files, assign each to a parser by filename
 2. **Parse** -- Extract `ImageReference` objects with edge types, confidence, source locations
-3. **Resolve** -- Substitute ARG defaults, HCL/Compose variables, CI variables, Ansible inventory
+3. **Resolve** -- Substitute ARG defaults, HCL/Compose variables, CI variables, Ansible templates
 4. **Build graph** -- Deduplicate nodes, apply aliases, compute criticality, classify
 5. **Output** (`map`) -- Interactive HTML report, Mermaid diagram, or JSON metadata
+
+### Variable Resolution
+
+Each parser extracts raw image strings that may contain template variables. Some
+parsers resolve variables inline (Dockerfile `ARG` defaults, Ansible role
+`defaults/main.yml`); the rest are resolved by a sequential pipeline of
+resolvers that each handle a specific variable syntax.
+
+```mermaid
+flowchart TD
+    subgraph parse ["Parsing (per file)"]
+        DF["Dockerfile"]
+        BK["Docker Bake (HCL)"]
+        CO["Docker Compose"]
+        AN["Ansible"]
+        OT["GitLab CI / GitHub Actions / Fallback"]
+
+        DF -- "ARG NAME=default<br/>substituted at parse time" --> REFS
+        BK -- "raw ${VAR} kept" --> REFS
+        CO -- "raw ${VAR:-default} kept" --> REFS
+        AN -- "{{ var }} resolved from<br/>role defaults/vars at parse time;<br/>lookups and loops kept raw" --> REFS
+        OT -- "raw $VAR / ${{ expr }} kept" --> REFS
+    end
+
+    REFS["All Image References"] --> R1
+
+    subgraph resolve ["Resolution Pipeline (sequential)"]
+        R1["ENV Resolver<br/><code>$VAR</code>, <code>${VAR}</code><br/>↳ os.environ"]
+        R2["Compose Resolver<br/><code>${VAR:-default}</code>, <code>${VAR-val}</code><br/>↳ .env files + env mapping"]
+        R3["Bake Resolver<br/><code>${VAR}</code><br/>↳ HCL variable{} block defaults"]
+        R4["Ansible Resolver<br/><code>{{ expr }}</code><br/>↳ ansible-playbook subprocess"]
+
+        R1 --> R2 --> R3 --> R4
+    end
+
+    R4 --> FILTER{Still unresolved?}
+    FILTER -- No --> NODE["Graph Node"]
+    FILTER -- Yes --> WARN["Warning<br/>(excluded from graph)"]
+```
+
+**What each resolver can resolve:**
+
+| Resolver | Syntax | Source | Example |
+|---|---|---|---|
+| Parser (Dockerfile) | `$VAR`, `${VAR}` | `ARG` defaults in the same file | `ARG BASE=python:3.12` → `FROM $BASE` |
+| Parser (Ansible) | `{{ var }}` | Role `defaults/main.yml`, `vars/main.yml` | `{{ nginx_version }}` → `1.27.3` |
+| ENV | `$VAR`, `${VAR}` | `os.environ` (opt-in via `resolve_env_vars: true`) | `${REGISTRY}` from shell env |
+| Compose | `${VAR:-default}` | `.env` files, env mapping in config | `${TAG:-latest}` → `latest` |
+| Bake | `${VAR}` | HCL `variable { default = "..." }` blocks | `${REGISTRY}/app` from bake file |
+| Ansible | `{{ var }}` | Play-level vars, inventory, extra-vars | `{{ internal_registry }}/app` |
+| Ansible | `{{ lookup('file', ...) }}` | File contents via `ansible-playbook` | `{{ lookup('file', 'version.txt') }}` |
+| Ansible | `{{ item.x }}` + `loop:` | Loop expansion via `ansible-playbook` | Unrolled to one ref per item |
+
+**What remains unresolvable** (reported as warnings):
+
+- Ansible `{{ lookup('hashi_vault', ...) }}` -- requires vault access at scan time
+- Ansible play-level `vars:` without inventory context
+- Dynamic loop sources (`loop: "{{ some_var | default([]) }}"`)
+- CI runtime variables (`$CI_COMMIT_SHA`, `$GITHUB_SHA`)
 
 ---
 
@@ -302,7 +387,7 @@ git clone https://github.com/ozonejunkieau/shipwreck.git
 cd shipwreck
 uv sync --all-extras
 
-just test        # run all tests (597 tests)
+just test        # run all tests (612 tests)
 just test-unit   # unit tests only
 just test-int    # integration tests only
 just lint        # ruff check
@@ -314,7 +399,14 @@ just all         # lint + check + test
 
 Requirements: Python 3.12+, [uv](https://docs.astral.sh/uv/), [just](https://github.com/casey/just).
 
-### Generate demo report
+### Generate a report from example data
+
+```bash
+shipwreck sail --config examples/shipwreck-examples.yaml -o examples/output
+open examples/output/shipwreck.html
+```
+
+Or generate a hardcoded demo graph (no parsing, useful for UI development):
 
 ```bash
 uv run python scripts/generate_demo.py

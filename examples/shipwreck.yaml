@@ -89,6 +89,8 @@ ansible:
   inventory: /path/to/inventory
   vault_password_file: /path/to/.vault_pass   # optional; omit if not using vault
   limit: production                            # optional; ansible --limit value
+  playbook_dir: /path/to/roles/myrole         # optional; directory for generated playbook
+                                               # so lookup('file', ...) finds role files/
 
 # ---------------------------------------------------------------------------
 # Environment variable resolution

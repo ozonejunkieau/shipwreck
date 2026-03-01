@@ -1,0 +1,7 @@
+---
+# Worker service defaults.
+
+worker_registry: registry.example.com
+worker_image: apps/worker
+worker_version: "3.8.1"
+worker_concurrency: 4

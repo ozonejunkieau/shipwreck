@@ -1,0 +1,10 @@
+# Background worker — built from the same internal base image as the API.
+
+FROM registry.example.com/base/python:3.12
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src/ ./src/
+
+CMD ["celery", "-A", "src.tasks", "worker", "--loglevel=info"]

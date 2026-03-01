@@ -66,6 +66,8 @@ _TASK_STRUCTURAL: frozenset[str] = frozenset(
         "listen",
         "check_mode",
         "diff",
+        "loop_control",
+        "with_list",
     }
 )
 
@@ -371,6 +373,8 @@ class AnsibleParser:
             if not is_template_string(raw_image) and not validate_image_ref(raw_image):
                 continue
 
+            metadata: dict[str, Any] = {}
+
             # Determine confidence and whether we can resolve the template.
             if is_template_string(raw_image):
                 # Check for lookup() calls — always unresolved.
@@ -387,6 +391,19 @@ class AnsibleParser:
                     unresolved = extract_variables(raw_image)
                     confidence = Confidence.LOW
                     resolved_image = raw_image
+                    # Capture loop context so resolution.ansible can unwind it
+                    loop_val = task.get("loop") or task.get("with_items") or task.get("with_list")
+                    if loop_val is not None:
+                        metadata["loop"] = loop_val
+                    # loop_var may be at task level or under loop_control
+                    loop_ctrl = task.get("loop_control")
+                    if isinstance(loop_ctrl, dict) and "loop_var" in loop_ctrl:
+                        metadata["loop_var"] = loop_ctrl["loop_var"]
+                    elif "loop_var" in task:
+                        metadata["loop_var"] = task["loop_var"]
+                    task_vars = task.get("vars")
+                    if isinstance(task_vars, dict):
+                        metadata["task_vars"] = task_vars
                 else:
                     # Attempt resolution using role variables.
                     resolved = _resolve_simple_template(raw_image, role_vars)
@@ -418,8 +435,6 @@ class AnsibleParser:
                 line=line_number,
                 parser=self.name,
             )
-
-            metadata: dict[str, Any] = {}
 
             ref = ImageReference(
                 raw=raw_image,

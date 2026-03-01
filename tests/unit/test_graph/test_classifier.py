@@ -66,20 +66,20 @@ class TestBuildsFromOnlyIsBase:
         assert graph.nodes["docker.io/library/alpine"].classification == "base"
 
 
-class TestConsumesIsProduct:
-    """Node in CONSUMES → classified as product."""
+class TestConsumesOnly:
+    """Node only consumed (not produced) → classified as external."""
 
-    def test_consumes_is_product(self) -> None:
+    def test_consumes_only_is_external(self) -> None:
         graph = Graph()
-        node = _node("docker.io/myorg/myapp")
-        node.sources.append(_source(EdgeType.CONSUMES, "deploy.yml"))
+        node = _node("docker.io/library/postgres")
+        node.sources.append(_source(EdgeType.CONSUMES, "roles/db/tasks/main.yml"))
         graph.nodes[node.id] = node
 
         classify_nodes(graph, _empty_config())
-        assert graph.nodes["docker.io/myorg/myapp"].classification == "product"
+        assert graph.nodes["docker.io/library/postgres"].classification == "external"
 
-    def test_consumes_plus_builds_from_is_product(self) -> None:
-        """CONSUMES takes precedence over BUILDS_FROM for product classification."""
+    def test_consumes_plus_builds_from_no_produces_is_external(self) -> None:
+        """CONSUMES without PRODUCES → external, even with BUILDS_FROM."""
         graph = Graph()
         node = _node("myapp")
         node.sources.append(_source(EdgeType.BUILDS_FROM))
@@ -87,7 +87,21 @@ class TestConsumesIsProduct:
         graph.nodes[node.id] = node
 
         classify_nodes(graph, _empty_config())
-        assert graph.nodes["myapp"].classification == "product"
+        assert graph.nodes["myapp"].classification == "external"
+
+
+class TestConsumesAndProducesIsProduct:
+    """Node both produced and consumed → classified as product."""
+
+    def test_consumes_and_produces_is_product(self) -> None:
+        graph = Graph()
+        node = _node("docker.io/myorg/myapp")
+        node.sources.append(_source(EdgeType.PRODUCES, "docker-bake.hcl"))
+        node.sources.append(_source(EdgeType.CONSUMES, "deploy.yml"))
+        graph.nodes[node.id] = node
+
+        classify_nodes(graph, _empty_config())
+        assert graph.nodes["docker.io/myorg/myapp"].classification == "product"
 
 
 class TestIntermediateClassification:
@@ -216,14 +230,14 @@ class TestSummaryUpdated:
             node.sources.append(_source(EdgeType.BUILDS_FROM))
             graph.nodes[node.id] = node
 
-        node = _node("product")
+        node = _node("external-img")
         node.sources.append(_source(EdgeType.CONSUMES, "deploy.yml"))
         graph.nodes[node.id] = node
 
         classify_nodes(graph, _empty_config())
         counts = graph.summary.classification_counts
         assert counts.get("base", 0) == 3
-        assert counts.get("product", 0) == 1
+        assert counts.get("external", 0) == 1
 
     def test_empty_graph_no_error(self) -> None:
         graph = Graph()

@@ -69,6 +69,7 @@ def export_json(graph: Graph, output_path: Path | None = None) -> str:
             for e in graph.edges
         ],
         "summary": graph.summary.model_dump(),
+        "warnings": graph.warnings,
     }
     result = json.dumps(data, indent=2, default=str)
     if output_path:

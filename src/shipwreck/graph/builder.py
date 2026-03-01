@@ -45,13 +45,29 @@ def build_graph(
     """
     graph = Graph(generated_at=generated_at)
 
-    # Group references by (repo, file) for edge construction.
-    by_file: dict[tuple[str, str], list[ImageReference]] = defaultdict(list)
+    # Filter out refs with unresolved variables and record warnings so the
+    # HTML report can surface them to the user.
+    usable_refs: list[ImageReference] = []
     for ref in references:
-        by_file[(ref.source.repo, ref.source.file)].append(ref)
+        if ref.unresolved_variables:
+            graph.warnings.append({
+                "message": f"Unresolvable image reference: {ref.raw}",
+                "file": ref.source.file,
+                "line": ref.source.line,
+                "raw": ref.raw,
+            })
+        else:
+            usable_refs.append(ref)
+
+    # Group references by (repo, file, scope) for edge construction.
+    # The scope field allows parsers like bake to isolate targets within a
+    # single file so that PRODUCES↔BUILDS_FROM pairing stays per-target.
+    by_file: dict[tuple[str, str, str | None], list[ImageReference]] = defaultdict(list)
+    for ref in usable_refs:
+        by_file[(ref.source.repo, ref.source.file, ref.source.scope)].append(ref)
 
     # --- Pass 1: Create / update image nodes ---
-    for ref in references:
+    for ref in usable_refs:
         node_id = _make_node_id(ref)
         if node_id not in graph.nodes:
             graph.nodes[node_id] = GraphNode(id=node_id, canonical=node_id)
@@ -71,7 +87,9 @@ def build_graph(
         )
 
     # --- Pass 2: Create edges from file-level groupings ---
-    for (repo, file_path), file_refs in by_file.items():
+    seen_edges: set[tuple[str, str, str]] = set()
+
+    for (repo, file_path, _scope), file_refs in by_file.items():
         produces_refs = [r for r in file_refs if r.relationship == EdgeType.PRODUCES]
         builds_from_refs = [r for r in file_refs if r.relationship == EdgeType.BUILDS_FROM]
 
@@ -83,6 +101,10 @@ def build_graph(
                     b_id = _make_node_id(b_ref)
                     if p_id == b_id:
                         continue
+                    edge_key = (p_id, b_id, EdgeType.BUILDS_FROM.value)
+                    if edge_key in seen_edges:
+                        continue
+                    seen_edges.add(edge_key)
                     graph.edges.append(
                         GraphEdge(
                             source=p_id,
@@ -101,6 +123,10 @@ def build_graph(
 
             for b_ref in builds_from_refs:
                 b_id = _make_node_id(b_ref)
+                edge_key = (synthetic_id, b_id, EdgeType.BUILDS_FROM.value)
+                if edge_key in seen_edges:
+                    continue
+                seen_edges.add(edge_key)
                 graph.edges.append(
                     GraphEdge(
                         source=synthetic_id,

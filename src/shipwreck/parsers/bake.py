@@ -146,7 +146,7 @@ class BakeParser:
         raw_lines = raw_text.splitlines()
 
         with file_path.open(encoding="utf-8") as fh:
-            data: dict[str, Any] = hcl2.load(fh)
+            data: dict[str, Any] = hcl2.load(fh)  # pyright: ignore[reportPrivateImportUsage]
 
         # ------------------------------------------------------------------
         # Step 1 — Collect variables
@@ -216,6 +216,7 @@ class BakeParser:
                     file=str(file_path),
                     line=line,
                     parser=self.name,
+                    scope=target_name,
                 )
 
                 refs.append(
@@ -240,8 +241,22 @@ class BakeParser:
                 if not ctx_value.startswith("docker-image://"):
                     continue
 
-                image_ref = ctx_value[len("docker-image://"):]
-                registry, name, tag, _ = parse_image_string(image_ref)
+                raw_image_ref = ctx_value[len("docker-image://"):]
+                resolved_ref, unresolved = _interpolate(raw_image_ref, variables)
+
+                if unresolved:
+                    confidence = Confidence.LOW
+                elif resolved_ref != raw_image_ref:
+                    confidence = Confidence.MEDIUM
+                else:
+                    confidence = Confidence.HIGH
+
+                registry, name, tag, parse_unresolved = parse_image_string(resolved_ref)
+
+                all_unresolved = list(unresolved)
+                for v in parse_unresolved:
+                    if v not in all_unresolved:
+                        all_unresolved.append(v)
 
                 line = _find_line(raw_lines, ctx_value)
                 source = SourceLocation(
@@ -249,18 +264,19 @@ class BakeParser:
                     file=str(file_path),
                     line=line,
                     parser=self.name,
+                    scope=target_name,
                 )
 
                 refs.append(
                     ImageReference(
-                        raw=image_ref,
+                        raw=resolved_ref,
                         registry=registry,
                         name=name,
                         tag=tag,
                         source=source,
                         relationship=EdgeType.BUILDS_FROM,
-                        confidence=Confidence.HIGH,
-                        unresolved_variables=[],
+                        confidence=confidence,
+                        unresolved_variables=all_unresolved,
                         metadata=dict(shared_meta),
                     )
                 )

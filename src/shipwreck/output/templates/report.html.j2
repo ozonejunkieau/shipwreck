@@ -1,9 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
+<script>
+    // Set theme before first paint to avoid flash of wrong theme.
+    (function () {
+        var theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", theme);
+    })();
+</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shipwreck — Dependency Graph</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Pirata+One&display=swap" rel="stylesheet">
     <style>
         /* ── Reset & base ─────────────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,6 +21,8 @@
         :root {
             --radius: 6px;
             --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-title: 'Pirata One', 'Georgia', serif;
+            --font-heading: 'Cinzel', 'Georgia', serif;
             --transition: 150ms ease;
             --header-h: 56px;
             --sidebar-w: 260px;
@@ -41,8 +53,8 @@
             --badge-external-text: #fb923c;
             --badge-unknown: #1c1c1c;
             --badge-unknown-text: #525252;
-            --badge-test: #431407;
-            --badge-test-text: #fb923c;
+            --badge-test: #422006;
+            --badge-test-text: #fbbf24;
             --staleness-current: #14532d;
             --staleness-current-text: #4ade80;
             --staleness-behind: #713f12;
@@ -97,8 +109,8 @@
             --badge-external-text: #c2410c;
             --badge-unknown: #f9fafb;
             --badge-unknown-text: #9ca3af;
-            --badge-test: #fff7ed;
-            --badge-test-text: #c2410c;
+            --badge-test: #fffbeb;
+            --badge-test-text: #b45309;
             --staleness-current: #f0fdf4;
             --staleness-current-text: #15803d;
             --staleness-behind: #fffbeb;
@@ -169,11 +181,12 @@
         }
 
         .logo {
-            font-size: 14px;
-            font-weight: 600;
+            font-family: var(--font-title);
+            font-size: 18px;
+            font-weight: 400;
             color: var(--text);
             white-space: nowrap;
-            letter-spacing: -0.02em;
+            letter-spacing: 0.02em;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -331,7 +344,8 @@
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             flex-shrink: 0;
             transition: width 200ms ease, min-width 200ms ease;
         }
@@ -348,10 +362,11 @@
         }
 
         .sidebar-section-title {
+            font-family: var(--font-heading);
             font-size: 11px;
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             color: var(--text-muted);
             margin-bottom: 8px;
         }
@@ -526,7 +541,7 @@
         .node-external rect     { fill: var(--surface2) !important; stroke: #f97316 !important; stroke-opacity: 0.4; stroke-dasharray: 5 3; }
         .node-unknown rect      { fill: var(--surface2) !important; stroke: var(--card-border) !important; stroke-dasharray: 3 3; }
         .node-product rect      { fill: var(--surface2) !important; stroke: #22c55e !important; stroke-opacity: 0.5; }
-        .node-test rect         { fill: var(--surface2) !important; stroke: #f59e0b !important; stroke-opacity: 0.4; stroke-dasharray: 4 3; }
+        .node-test rect         { fill: var(--surface2) !important; stroke: #eab308 !important; stroke-opacity: 0.4; stroke-dasharray: 4 3; }
 
         /* highlight states */
         .node.highlight-selected rect { stroke: var(--highlight-selected) !important; stroke-width: 2px !important; stroke-opacity: 1 !important; stroke-dasharray: none !important; }
@@ -839,11 +854,12 @@
         }
 
         .legend-title {
+            font-family: var(--font-heading);
             font-weight: 600;
             color: var(--text);
             font-size: 10px;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             margin-bottom: 2px;
         }
 
@@ -889,6 +905,44 @@
         .source-dot-ansible          { background: #ef4444; }
         .source-dot-yaml             { background: #6b7280; }
         .source-dot-other            { background: #6b7280; }
+
+        /* ── Node source dots (parser-origin indicators inside graph nodes) */
+        .node-source-dots { display: flex; gap: 3px; margin-top: 4px; }
+        .node-source-dots .source-dot { width: 6px; height: 6px; }
+
+        /* ── Warning panel (bottom-right, amber, non-dismissable) ──────── */
+        .warning-panel {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            max-width: 360px;
+            max-height: 220px;
+            overflow-y: auto;
+            background: var(--surface);
+            border: 1px solid #d97706;
+            border-radius: var(--radius);
+            padding: 10px 12px;
+            font-size: 11px;
+            color: var(--text);
+            z-index: 200;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .warning-panel-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: #d97706;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .warning-panel-item {
+            padding: 3px 0;
+            border-bottom: 1px solid var(--border);
+            word-break: break-all;
+        }
+        .warning-panel-item:last-child { border-bottom: none; }
+        .warning-panel-file { color: var(--text-muted); font-size: 10px; }
 
         /* ── Source tree (grouped by type) ──────────────────────────────── */
         .source-tree-group {
@@ -1026,10 +1080,11 @@
                     id="search"
                     placeholder="Filter images…"
                     autocomplete="off"
-                    aria-label="Search images by name"
+                    aria-label="Search images by name — press / to focus, Esc to clear"
                     aria-controls="graph-area"
+                    title="Filter graph nodes by image name. Press / to focus, Esc to clear."
                 />
-                <span class="search-shortcut" aria-hidden="true">/</span>
+                <span class="search-shortcut" aria-hidden="true" title="Press / to focus search, Esc to clear">/</span>
             </div>
 
             <div class="sep" aria-hidden="true"></div>
@@ -1042,7 +1097,7 @@
                 </svg>
             </button>
             <button class="btn" id="reset-zoom" aria-label="Reset zoom to fit graph">Reset zoom</button>
-            <button class="btn" id="theme-toggle" aria-label="Toggle color theme">Light</button>
+            <button class="btn btn-icon" id="theme-toggle" aria-label="Toggle color theme" title="Toggle light/dark theme"></button>
         </div>
     </header>
 
@@ -1188,7 +1243,7 @@
                         <span>External</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-swatch" style="background:var(--badge-test);border:1px dashed rgba(251,146,60,0.4)"></div>
+                        <div class="legend-swatch" style="background:var(--badge-test);border:1px dashed rgba(234,179,8,0.4)"></div>
                         <span>Test</span>
                     </div>
                     <div class="legend-title" style="margin-top:6px">Edges</div>
@@ -1254,6 +1309,19 @@
         <div class="tooltip-body"></div>
     </div>
 
+    <!-- Warning panel for unresolvable refs -->
+    {% if warnings %}
+    <div class="warning-panel" role="complementary" aria-label="Unresolvable references">
+        <div class="warning-panel-title">&#9888; {{ warnings | length }} unresolvable reference{{ 's' if warnings | length != 1 else '' }}</div>
+        {% for w in warnings %}
+        <div class="warning-panel-item">
+            <code>{{ w.raw }}</code>
+            <div class="warning-panel-file">{{ w.file }}:{{ w.line }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Embedded graph data -->
     <script>
         const GRAPH_DATA = {{ graph_data_json | safe }};
@@ -1262,6 +1330,7 @@
         const REGISTRIES = {{ registries_json | safe }};
         const SOURCE_FILES = {{ source_files_json | safe }};
         const SOURCE_TREE = {{ source_tree_json | safe }};
+        const WARNINGS = {{ warnings_json | safe }};
     </script>
 
     <!-- CDN libraries — dagre-d3 0.6.4 requires d3 v5 -->
@@ -1408,8 +1477,6 @@
 
         function render() {
             inner.selectAll("*").remove();
-            // Force synchronous reflow so dagre-d3 measures fresh DOM
-            inner.node().getBoundingClientRect();
             selectedNode = null;
 
             var result = computeVisible();
@@ -1448,9 +1515,24 @@
                     tagsHtml += '<span class="node-tag node-tag-overflow">+' + (allTags.length - 4) + '</span>';
                 }
 
-                var staleClass = stalenessBadgeClass(node.staleness);
-                var staleLabel = stalenessBadgeLabel(node.staleness);
-                var staleHtml  = '<span class="node-staleness-badge ' + escapeHtml(staleClass) + '"><span class="staleness-dot"></span>' + escapeHtml(staleLabel) + '</span>';
+                var staleHtml = "";
+                if (node.staleness) {
+                    var staleClass = stalenessBadgeClass(node.staleness);
+                    var staleLabel = stalenessBadgeLabel(node.staleness);
+                    staleHtml = '<span class="node-staleness-badge ' + escapeHtml(staleClass) + '"><span class="staleness-dot"></span>' + escapeHtml(staleLabel) + '</span>';
+                }
+
+                // Compute unique source type dots for this node
+                var seenTypes = {};
+                var dotsHtml = "";
+                (node.sources || []).forEach(function (s) {
+                    var ft = s.file_type || "other";
+                    if (!seenTypes[ft]) {
+                        seenTypes[ft] = true;
+                        dotsHtml += '<span class="' + sourceDotClass(ft) + '" title="' + escapeHtml(ft) + '"></span>';
+                    }
+                });
+                if (dotsHtml) dotsHtml = '<div class="node-source-dots">' + dotsHtml + '</div>';
 
                 var labelHtml =
                     '<div class="node-inner">' +
@@ -1460,6 +1542,7 @@
                     '</div>' +
                     (tagsHtml ? '<div class="node-tags">' + tagsHtml + '</div>' : "") +
                     staleHtml +
+                    dotsHtml +
                     '</div>';
 
                 var diffClass = "";
@@ -1506,21 +1589,13 @@
                 });
             });
 
+            // Reset zoom to identity before rendering so dagre-d3 measures
+            // node labels at scale=1 (otherwise getBoundingClientRect returns
+            // scaled dimensions, producing undersized nodes on re-render).
+            svg.call(zoom.transform, d3.zoomIdentity);
+
             var renderFn = new dagreD3.render();
             renderFn(inner, g);
-
-            // ── Fix dagre-d3 foreignObject sizing (measurement bug) ─────
-            inner.selectAll("g.node foreignObject").each(function () {
-                var fo  = d3.select(this);
-                var div = fo.select("div").node();
-                if (!div) return;
-                var w = div.scrollWidth;
-                var h = div.scrollHeight;
-                if (w > 0 && h > 0) {
-                    fo.attr("width",  Math.ceil(w));
-                    fo.attr("height", Math.ceil(h));
-                }
-            });
 
             // ── Apply stagger animation ────────────────────────────────────
             inner.selectAll("g.node").each(function (_, i) {
@@ -1837,11 +1912,18 @@
             render();
         });
 
-        document.getElementById("theme-toggle").addEventListener("click", function () {
+        // ── Theme toggle (sun/moon) ──────────────────────────────────────────
+        var themeBtn = document.getElementById("theme-toggle");
+        function updateThemeIcon() {
+            var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+            themeBtn.textContent = isDark ? "\u2600\uFE0F" : "\uD83C\uDF19";
+        }
+        updateThemeIcon();
+        themeBtn.addEventListener("click", function () {
             var root  = document.documentElement;
             var isDark = root.getAttribute("data-theme") === "dark";
             root.setAttribute("data-theme", isDark ? "light" : "dark");
-            this.textContent = isDark ? "Dark" : "Light";
+            updateThemeIcon();
         });
 
         var sidebar       = document.getElementById("sidebar");

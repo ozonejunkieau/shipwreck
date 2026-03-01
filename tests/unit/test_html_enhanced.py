@@ -634,9 +634,9 @@ def test_html_badge_test_css_variables_light() -> None:
     graph = make_rich_graph()
     result = export_html(graph)
 
-    # Dark theme uses #431407, light uses #fff7ed — both should be present
-    assert "#431407" in result
-    assert "#fff7ed" in result
+    # Dark theme uses #422006, light uses #fffbeb — both should be present
+    assert "#422006" in result
+    assert "#fffbeb" in result
 
 
 def test_html_test_in_legend() -> None:

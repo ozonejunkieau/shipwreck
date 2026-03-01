@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Annotated
 
@@ -20,6 +21,25 @@ app = typer.Typer(
 )
 
 console = Console()
+
+
+def _verbose_callback(value: bool) -> None:
+    """Configure logging when --verbose is passed."""
+    if value:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(levelname)s %(name)s: %(message)s",
+        )
+
+
+@app.callback()
+def _app_callback(
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Log outbound network requests and policy decisions.", callback=_verbose_callback, is_eager=True),
+    ] = False,
+) -> None:
+    """🏴\u200d☠️ Mapping the buried treasure in your container stack."""
 
 # --------------------------------------------------------------------------- #
 # Shared option types

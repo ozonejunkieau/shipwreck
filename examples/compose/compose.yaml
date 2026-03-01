@@ -1,0 +1,89 @@
+# Docker Compose stack for local development and deployment.
+#
+# Demonstrates:
+#   - Plain image references (consumes edges, HIGH confidence)
+#   - Variable substitution with ${VAR:-default} (resolved via .env)
+#   - build + image (produces edges)
+#   - Profiles for optional services
+
+services:
+  # --- Application services (built locally) ---
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: ${REGISTRY}/apps/api:${VERSION:-latest}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: postgresql://app:secret@postgres:5432/appdb
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.worker
+    image: ${REGISTRY}/apps/worker:${VERSION:-latest}
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+
+  # --- Infrastructure (external images) ---
+
+  postgres:
+    image: postgres:${PG_VERSION:-16}-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7.4-alpine
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api
+
+  # --- Monitoring (optional, via profile) ---
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles: ["monitoring"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    profiles: ["monitoring"]
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
+  redis_data:
+  prometheus_data:

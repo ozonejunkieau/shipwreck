@@ -29,3 +29,6 @@ htmlcov/
 
 # Demo output (regeneratable)
 demo_output/
+
+# Example output (regeneratable)
+examples/output/
