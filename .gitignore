@@ -12,6 +12,9 @@ wheels/
 # Shipwreck working data
 .shipwreck/
 
+# Claude Code (user-specific settings, not the shared skill/config)
+.claude/settings.local.json
+
 # IDE
 .idea/
 .vscode/

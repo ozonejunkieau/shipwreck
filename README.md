@@ -413,6 +413,12 @@ uv run python scripts/generate_demo.py
 open demo_output/shipwreck.html
 ```
 
+### Claude Code integration
+
+Shipwreck ships with a [Claude Code](https://claude.ai/claude-code) custom skill. If you're using Claude Code in this project, type `/shipwreck` to scan repos, generate reports, and query the dependency graph interactively.
+
+The skill is defined in [`.claude/skills/shipwreck/SKILL.md`](.claude/skills/shipwreck/SKILL.md). Project-level instructions for contributors using Claude Code are in [`CLAUDE.md`](CLAUDE.md).
+
 ---
 
 ## License
