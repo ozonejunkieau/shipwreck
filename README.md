@@ -31,9 +31,6 @@ Docker images form invisible dependency graphs across repositories. When a base 
 </tr>
 </table>
 
-<details>
-<summary><strong>Example Mermaid output</strong> (click to expand)</summary>
-
 Shipwreck also generates Mermaid diagrams that render natively on GitHub:
 
 ```mermaid
@@ -56,22 +53,20 @@ flowchart LR
     nginx_proxy["nginx-proxy<br/>1.25-custom"]
     backend_api_test["backend-api-test<br/>2.4.1-test"]:::test
 
-    base_python -->|builds_from| python
-    backend_api -->|builds_from| base_python
-    data_pipeline -->|builds_from| python
-    base_node -->|builds_from| nodeJs
-    frontend_svc -->|builds_from| base_node
-    nginx_proxy -->|builds_from| alpine
-    backend_api_test -->|builds_from| base_python
-    backend_api -.->|requires| postgres
-    backend_api -.->|requires| redis
-    frontend_svc -.->|requires| nginx_proxy
-    backend_api_test -.->|requires| backend_api
+    python -->|base of| base_python
+    base_python -->|base of| backend_api
+    python -->|base of| data_pipeline
+    nodeJs -->|base of| base_node
+    base_node -->|base of| frontend_svc
+    alpine -->|base of| nginx_proxy
+    base_python -->|base of| backend_api_test
+    postgres -.->|requires| backend_api
+    redis -.->|requires| backend_api
+    nginx_proxy -.->|requires| frontend_svc
+    backend_api -.->|requires| backend_api_test
 ```
 
-Solid lines = `builds_from` (Dockerfile FROM). Dashed lines = `requires` (runtime dependency). Node colours indicate staleness (yellow = behind, red = major behind).
-
-</details>
+Solid arrows = build dependencies (Dockerfile FROM chains). Dashed arrows = runtime dependencies (Compose, Ansible, etc.). Node colours indicate staleness.
 
 ---
 

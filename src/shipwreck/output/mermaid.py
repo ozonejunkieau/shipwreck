@@ -15,17 +15,31 @@ _CLASS_STYLES: dict[str, str] = {
     "test": "fill:#422006,stroke:#d97706,color:#fde68a",
 }
 
+# Arrow style per edge type.  builds_from and consumes are rendered with
+# reversed direction so that the visual flow matches the HTML report:
+#   base ──base of──▶ child       (builds_from: swap source/target)
+#   dependency ──requires──▶ consumer  (consumes: swap source/target)
 _EDGE_STYLES: dict[EdgeType, str] = {
     EdgeType.BUILDS_FROM: "-->",
     EdgeType.PRODUCES: "==>",
     EdgeType.CONSUMES: "-.->",
 }
 
+_EDGE_LABELS: dict[EdgeType, str] = {
+    EdgeType.BUILDS_FROM: "base of",
+    EdgeType.PRODUCES: "produces",
+    EdgeType.CONSUMES: "requires",
+}
+
+# These edge types have their source/target swapped so arrows flow
+# left-to-right from dependency to dependent (matching the HTML report).
+_REVERSED_EDGES: set[EdgeType] = {EdgeType.BUILDS_FROM, EdgeType.CONSUMES}
+
 _STALENESS_EMOJI: dict[str | None, str] = {
-    "current": "✅",
-    "behind": "⚠️",
-    "major_behind": "🔴",
-    "unknown": "❓",
+    "current": "",
+    "behind": " *",
+    "major_behind": " **",
+    "unknown": " ?",
     None: "",
 }
 
@@ -63,7 +77,7 @@ def _node_label(node: GraphNode) -> str:
 
     staleness = _STALENESS_EMOJI.get(node.staleness, "")
     canonical = node.canonical.split("/")[-1]  # just the image name part
-    return f"{canonical}\\n[{tags_str}]{staleness}"
+    return f"{canonical}<br/>{tags_str}{staleness}"
 
 
 def _build_mermaid(nodes: dict[str, GraphNode], edges_subset: list, all_node_ids: set[str]) -> str:
@@ -95,11 +109,19 @@ def _build_mermaid(nodes: dict[str, GraphNode], edges_subset: list, all_node_ids
 
     lines.append("")
 
-    # Edge declarations — only include edges where both endpoints are in this diagram
+    # Edge declarations — only include edges where both endpoints are in this diagram.
+    # builds_from and consumes are reversed so arrows flow left-to-right from
+    # dependency to dependent, matching the interactive HTML report.
     for edge in edges_subset:
         if edge.source in all_node_ids and edge.target in all_node_ids:
             arrow = _EDGE_STYLES.get(edge.relationship, "-->")
-            lines.append(f"    {_safe_id(edge.source)} {arrow} {_safe_id(edge.target)}")
+            label = _EDGE_LABELS.get(edge.relationship, "")
+            if edge.relationship in _REVERSED_EDGES:
+                src, tgt = edge.target, edge.source
+            else:
+                src, tgt = edge.source, edge.target
+            label_str = f"|{label}|" if label else ""
+            lines.append(f"    {_safe_id(src)} {arrow}{label_str} {_safe_id(tgt)}")
 
     return "\n".join(lines)
 
