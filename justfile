@@ -50,6 +50,11 @@ examples:
     uv run shipwreck map  --config examples/shipwreck-examples.yaml -o examples/output --format html
     uv run shipwreck map  --config examples/shipwreck-examples.yaml -o examples/output --format json
 
+# Regenerate README screenshots from the demo graph
+screenshots:
+    uv run python scripts/generate_demo.py
+    uv run python scripts/take_screenshots.py
+
 # CLI command shortcuts
 hunt *ARGS:
     uv run shipwreck hunt {{ARGS}}

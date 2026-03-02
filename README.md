@@ -12,6 +12,67 @@ Docker images form invisible dependency graphs across repositories. When a base 
 
 > This project was built almost entirely with [Claude](https://claude.ai) (Anthropic's AI assistant) using [Claude Code](https://claude.ai/claude-code). The architecture, implementation, tests, and documentation were developed through iterative AI-assisted programming.
 
+<table>
+<tr>
+<td><img src="docs/screenshots/graph-dark.png" alt="Dark theme — full dependency graph" width="700"></td>
+<td><img src="docs/screenshots/graph-dark-detail.png" alt="Dark theme — node detail panel with edge labels" width="700"></td>
+</tr>
+<tr>
+<td><em>Dark theme — dependency graph overview</em></td>
+<td><em>Node detail panel with edge labels</em></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/graph-light.png" alt="Light theme — full dependency graph" width="700"></td>
+<td><img src="docs/screenshots/graph-light-detail.png" alt="Light theme — node detail panel" width="700"></td>
+</tr>
+<tr>
+<td><em>Light theme</em></td>
+<td><em>Light theme — node detail with sources</em></td>
+</tr>
+</table>
+
+<details>
+<summary><strong>Example Mermaid output</strong> (click to expand)</summary>
+
+Shipwreck also generates Mermaid diagrams that render natively on GitHub:
+
+```mermaid
+flowchart LR
+    classDef base fill:#374151,stroke:#6b7280,color:#9ca3af
+    classDef test fill:#422006,stroke:#d97706,color:#fde68a
+    classDef behind fill:#713f12,stroke:#eab308,color:#fde68a
+    classDef major fill:#7f1d1d,stroke:#ef4444,color:#fecaca
+
+    python["python<br/>3.12, 3.12-slim"]:::behind
+    base_python["base-python<br/>3.12-v2"]:::base
+    backend_api["backend-api<br/>2.4.1"]
+    frontend_svc["frontend-svc<br/>1.9.2"]:::behind
+    data_pipeline["data-pipeline<br/>0.8.3"]:::major
+    nodeJs["node<br/>18-alpine"]:::major
+    base_node["base-node<br/>18-v3"]:::base
+    postgres["postgres<br/>16"]
+    redis["redis<br/>7.2"]:::behind
+    alpine["alpine<br/>3.19"]:::behind
+    nginx_proxy["nginx-proxy<br/>1.25-custom"]
+    backend_api_test["backend-api-test<br/>2.4.1-test"]:::test
+
+    base_python -->|builds_from| python
+    backend_api -->|builds_from| base_python
+    data_pipeline -->|builds_from| python
+    base_node -->|builds_from| nodeJs
+    frontend_svc -->|builds_from| base_node
+    nginx_proxy -->|builds_from| alpine
+    backend_api_test -->|builds_from| base_python
+    backend_api -.->|requires| postgres
+    backend_api -.->|requires| redis
+    frontend_svc -.->|requires| nginx_proxy
+    backend_api_test -.->|requires| backend_api
+```
+
+Solid lines = `builds_from` (Dockerfile FROM). Dashed lines = `requires` (runtime dependency). Node colours indicate staleness (yellow = behind, red = major behind).
+
+</details>
+
 ---
 
 ## Quick Start
